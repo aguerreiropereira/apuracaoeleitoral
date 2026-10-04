@@ -20,12 +20,18 @@ class TseClient {
    */
   buildJwsUrl(uf = "br", cargo = "1") {
     let ufLower = (uf || "br").toLowerCase();
-    // Governador e Senador não existem no âmbito 'BR'; padroniza para 'SP' se nenhum for selecionado
-    if ((cargo === "3" || cargo === "5") && (ufLower === "br" || !ufLower)) {
+    // Cargos estaduais e proporcionais não existem no âmbito 'BR'; padroniza para 'sp' se nenhum for selecionado
+    if (cargo !== "1" && (ufLower === "br" || !ufLower)) {
       ufLower = "sp";
     }
 
-    const cargoCode = String(cargo).padStart(4, "0");
+    // No Distrito Federal (DF), Deputado Estadual (cargo 7) é Deputado Distrital (cargo 8)
+    let actualCargo = String(cargo);
+    if (ufLower === "df" && actualCargo === "7") {
+      actualCargo = "8";
+    }
+
+    const cargoCode = actualCargo.padStart(4, "0");
     const eleicaoId = (cargo === "1") ? "6257" : "6259";
     return `${this.baseUrl}/ele${this.ano}/${eleicaoId}/dados/${ufLower}/${ufLower}-c${cargoCode}-e00${eleicaoId}-u.jws`;
   }
@@ -116,7 +122,7 @@ class TseClient {
   async fetchLiveSnapshot(cargo = "1", uf = "br") {
     const now = Date.now();
     let ufLower = (uf || "br").toLowerCase();
-    if ((cargo === "3" || cargo === "5") && (ufLower === "br" || !ufLower)) {
+    if (cargo !== "1" && (ufLower === "br" || !ufLower)) {
       ufLower = "sp";
     }
 
@@ -144,9 +150,21 @@ class TseClient {
     const electorate = parseInt(e.te || "158745502", 10);
 
     const hasStarted = procSec > 0 || totalVotes > 0;
-    const officeName = cargObj.nmn || (cargo === "1" ? "Presidente" : (cargo === "3" ? "Governador" : "Senador"));
     const ufUpper = ufLower.toUpperCase();
     const ufName = UF_NAMES[ufUpper] || (ufLower === "br" ? "Brasil" : ufUpper);
+
+    let officeName = cargObj.nmn;
+    if (!officeName) {
+      switch(String(cargo)) {
+        case "1": officeName = "Presidente"; break;
+        case "3": officeName = "Governador"; break;
+        case "5": officeName = "Senador"; break;
+        case "6": officeName = "Deputado Federal"; break;
+        case "7": officeName = (ufUpper === "DF") ? "Deputado Distrital" : "Deputado Estadual"; break;
+        case "8": officeName = "Deputado Distrital"; break;
+        default: officeName = "Candidato"; break;
+      }
+    }
 
     return {
       mode: "tse",

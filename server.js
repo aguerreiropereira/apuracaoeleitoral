@@ -101,6 +101,8 @@ const server = http.createServer(async (req, res) => {
   let safePath = path.normalize(pathname).replace(/^(\.\.[\/\\])+/, "");
   if (safePath === "/" || safePath === "\\") {
     safePath = "/index.html";
+  } else if (safePath === "/mobile" || safePath === "/mobile/" || safePath === "/m") {
+    safePath = "/mobile.html";
   }
 
   const filePath = path.join(PUBLIC_DIR, safePath);

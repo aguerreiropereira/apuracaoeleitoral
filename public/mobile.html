@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#009739">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Apuração Brasil 2026 · Mobile Oficial</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/mobile.css">
+</head>
+<body>
+
+  <!-- Faixa Oficial do Brasil -->
+  <div class="m-ribbon-br">
+    <div class="m-ribbon-g"></div>
+    <div class="m-ribbon-y"></div>
+    <div class="m-ribbon-b"></div>
+  </div>
+
+  <!-- Header Superior Mobile -->
+  <header class="m-header">
+    <div class="m-header-left">
+      <div class="m-logo-box">
+        <svg class="m-flag-svg" viewBox="0 0 1000 700" width="24" height="17">
+          <rect width="1000" height="700" fill="#009739"/>
+          <polygon points="500,84 916,350 500,616 84,350" fill="#fed100"/>
+          <circle cx="500" cy="350" r="175" fill="#002776"/>
+        </svg>
+        <div class="m-brand-text">
+          <span class="m-brand-title">BRASIL 2026</span>
+          <span class="m-brand-sub">Apuração TSE</span>
+        </div>
+      </div>
+      <div class="m-live-chip">
+        <span class="m-live-dot"></span>
+        <span>AO VIVO</span>
+      </div>
+    </div>
+
+    <div class="m-header-right">
+      <!-- Alternar Tema Claro/Escuro -->
+      <button id="mBtnTheme" class="m-icon-btn" title="Alternar Modo Escuro / Claro">
+        <svg id="mIconSun" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="display:none;">
+          <circle cx="12" cy="12" r="5"></circle>
+          <line x1="12" y1="1" x2="12" y2="3"></line>
+          <line x1="12" y1="21" x2="12" y2="23"></line>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+          <line x1="1" y1="12" x2="3" y2="12"></line>
+          <line x1="21" y1="12" x2="23" y2="12"></line>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+        </svg>
+        <svg id="mIconMoon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+      </button>
+
+      <!-- Botão Atualizar -->
+      <button id="mBtnRefresh" class="m-icon-btn" title="Atualizar agora">
+        <svg id="mIconRefresh" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <polyline points="1 20 1 14 7 14"></polyline>
+          <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+        </svg>
+      </button>
+
+      <!-- Voltar para Desktop -->
+      <a href="/" class="m-desktop-btn" title="Visualização completa de Computador">
+        💻 Desktop
+      </a>
+    </div>
+  </header>
+
+  <!-- Barra de Filtros Fixa: Seletor de Cargos (Scroll Horizontal) -->
+  <nav class="m-nav-bar">
+    <div class="m-cargo-scroll" id="mCargoScroll">
+      <button class="m-cargo-chip active" data-cargo="1">
+        <span class="m-chip-icon">🗳️</span> Presidente
+      </button>
+      <button class="m-cargo-chip" data-cargo="3">
+        <span class="m-chip-icon">🏛️</span> Governador
+      </button>
+      <button class="m-cargo-chip" data-cargo="5">
+        <span class="m-chip-icon">🏛️</span> Senador
+      </button>
+      <button class="m-cargo-chip" data-cargo="6">
+        <span class="m-chip-icon">👥</span> Dep. Federal
+      </button>
+      <button class="m-cargo-chip" data-cargo="7">
+        <span class="m-chip-icon">📋</span> Dep. Estadual
+      </button>
+    </div>
+
+    <!-- Seletor de Estado / Abrangência (Trigger Drawer) -->
+    <div class="m-uf-bar">
+      <button id="mBtnOpenUfDrawer" class="m-uf-trigger">
+        <div class="m-uf-info">
+          <span class="m-uf-badge" id="mCurrentUfBadge">BR</span>
+          <div class="m-uf-text">
+            <span class="m-uf-sub">Abrangência</span>
+            <strong id="mCurrentUfName">Brasil (Total Nacional)</strong>
+          </div>
+        </div>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="6 9 12 15 18 9"></polyline>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Conteúdo Principal -->
+  <main class="m-container">
+
+    <!-- Card de Apuração Geral -->
+    <section class="m-card m-summary-card">
+      <div class="m-summary-header">
+        <div>
+          <span class="m-card-badge" id="mOfficeBadge">Presidente da República</span>
+          <h2 class="m-summary-title" id="mSummaryLocation">Total Brasil</h2>
+        </div>
+        <div class="m-proc-number-box">
+          <span class="m-proc-pct" id="mProcPct">0,00%</span>
+          <span class="m-proc-lbl">Apuradas</span>
+        </div>
+      </div>
+
+      <!-- Barra de Progresso de Urnas -->
+      <div class="m-progress-bg">
+        <div class="m-progress-fill" id="mProgressFill" style="width: 0%;"></div>
+      </div>
+
+      <!-- Métricas Resumidas em Chips -->
+      <div class="m-metrics-grid">
+        <div class="m-metric-item">
+          <span class="m-met-lbl">Seções Apuradas</span>
+          <strong class="m-met-val" id="mSecCount">0 / 0</strong>
+        </div>
+        <div class="m-metric-item">
+          <span class="m-met-lbl">Votos Válidos</span>
+          <strong class="m-met-val" id="mValidVotes">0</strong>
+        </div>
+        <div class="m-metric-item">
+          <span class="m-met-lbl">Total de Votos</span>
+          <strong class="m-met-val" id="mTotalVotes">0</strong>
+        </div>
+        <div class="m-metric-item">
+          <span class="m-met-lbl">Atualização TSE</span>
+          <strong class="m-met-val" id="mLastUpdate">--:--:--</strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- Barra de Pesquisa de Candidatos (Especial para Deputados) -->
+    <div class="m-search-box">
+      <div class="m-search-input-wrap">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="mSearchInput" placeholder="Buscar candidato, número ou partido..." autocomplete="off">
+        <button id="mBtnClearSearch" class="m-clear-search" style="display:none;">✕</button>
+      </div>
+      <div class="m-search-sub" id="mSearchCount">Carregando candidatos...</div>
+    </div>
+
+    <!-- Lista de Candidatos Mobile -->
+    <section class="m-candidates-section" id="mCandidatesList">
+      <div class="m-loading-skeleton">
+        <div class="m-skeleton-line" style="width:60%;"></div>
+        <div class="m-skeleton-card"></div>
+        <div class="m-skeleton-card"></div>
+        <div class="m-skeleton-card"></div>
+      </div>
+    </section>
+
+    <!-- Rodapé Mobile com Créditos e Links Oficiais -->
+    <footer class="m-footer">
+      <p>Dados oficiais transmitidos diretamente da CDN do <strong>Tribunal Superior Eleitoral (TSE)</strong>.</p>
+      <div class="m-footer-links">
+        <span id="mModeIndicator">Modo Oficial TSE</span> · 
+        <a href="/" style="color:var(--m-green); font-weight:700;">Versão Desktop Completa</a>
+      </div>
+    </footer>
+  </main>
+
+  <!-- ======================================================== -->
+  <!-- Drawer de Seleção de Estado (Bottom Sheet) -->
+  <!-- ======================================================== -->
+  <div class="m-drawer-overlay" id="mUfDrawerOverlay" style="display:none;">
+    <div class="m-drawer-sheet" id="mUfDrawerSheet">
+      <div class="m-drawer-handle"></div>
+      <div class="m-drawer-header">
+        <h3>Selecione o Estado (UF)</h3>
+        <button id="mBtnCloseUfDrawer" class="m-drawer-close">✕</button>
+      </div>
+
+      <div class="m-drawer-search">
+        <input type="text" id="mDrawerUfSearch" placeholder="Filtrar estado ou sigla (ex: MS, SP, RJ)...">
+      </div>
+
+      <div class="m-uf-list" id="mUfList">
+        <!-- Renderizado dinamicamente via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- Modal / Bottom Sheet de Desempenho Detalhado do Candidato -->
+  <!-- ======================================================== -->
+  <div class="m-drawer-overlay" id="mCandModalOverlay" style="display:none;">
+    <div class="m-drawer-sheet m-cand-detail-sheet" id="mCandModalSheet">
+      <div class="m-drawer-handle"></div>
+      
+      <div class="m-drawer-header">
+        <div>
+          <span class="m-cand-detail-sub" id="mModalOfficeScope">Desempenho Detalhado</span>
+          <h3 class="m-cand-detail-name" id="mModalCandName">Nome do Candidato</h3>
+        </div>
+        <button id="mBtnCloseCandModal" class="m-drawer-close">✕</button>
+      </div>
+
+      <!-- Loading do Modal -->
+      <div id="mModalLoading" class="m-modal-loading">
+        <div class="m-spinner"></div>
+        <span>Carregando dados oficiais do TSE...</span>
+      </div>
+
+      <!-- Conteúdo do Desempenho -->
+      <div id="mModalContent" class="m-modal-content" style="display:none;">
+        
+        <!-- Perfil do Candidato -->
+        <div class="m-cand-header-card">
+          <div class="m-cand-avatar-wrap">
+            <img id="mModalFoto" src="" alt="Foto" class="m-modal-avatar">
+            <span id="mModalNumero" class="m-modal-number">--</span>
+          </div>
+          <div class="m-cand-header-meta">
+            <div class="m-cand-badges-row">
+              <span id="mModalBadgeStatus" class="cand-badge-status">Em apuração</span>
+              <span id="mModalParty" class="m-cand-party-tag">--</span>
+            </div>
+            <div class="m-cand-full-name" id="mModalFullName">Nome Completo</div>
+            <div class="m-cand-colig" id="mModalColig">Coligação</div>
+            <div class="m-cand-vice" id="mModalViceRow" style="display:none;">
+              <small>Vice/Suplente:</small> <span id="mModalVice"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Métricas Rápidas -->
+        <div class="m-cand-stats-grid">
+          <div class="m-cand-stat-box">
+            <span class="m-c-lbl">Percentual</span>
+            <strong class="m-c-val highlight" id="mModalCandPct">0,00%</strong>
+          </div>
+          <div class="m-cand-stat-box">
+            <span class="m-c-lbl">Total de Votos</span>
+            <strong class="m-c-val" id="mModalCandVotes">0</strong>
+          </div>
+          <div class="m-cand-stat-box">
+            <span class="m-c-lbl" id="mModalBestLabel">Melhor Região</span>
+            <strong class="m-c-val" id="mModalBestRegion">-</strong>
+          </div>
+          <div class="m-cand-stat-box">
+            <span class="m-c-lbl" id="mModalCapLabel">Votação Capital</span>
+            <strong class="m-c-val" id="mModalCapitalVotes">-</strong>
+          </div>
+        </div>
+
+        <!-- Proporção Capital vs Interior -->
+        <div class="m-cand-ratio-card" id="mModalRatioCard" style="display:none;">
+          <div class="m-ratio-header">
+            <span>Capital vs Interior</span>
+            <small id="mModalRatioText">Capital: 0% · Interior: 0%</small>
+          </div>
+          <div class="m-ratio-bar">
+            <div class="m-ratio-cap" id="mModalRatioCap" style="width:50%;"></div>
+            <div class="m-ratio-int" id="mModalRatioInt" style="width:50%;"></div>
+          </div>
+        </div>
+
+        <!-- Tabela / Lista de Desempenho Regional -->
+        <div class="m-cand-regions-box">
+          <div class="m-regions-top">
+            <h4 id="mModalTableTitle">Detalhamento por Região</h4>
+            <div class="m-sort-chips" id="mModalSortChips">
+              <button class="m-sort-chip active" data-sort="pct">% Votos</button>
+              <button class="m-sort-chip" data-sort="votes">Qtd Votos</button>
+              <button class="m-sort-chip" data-sort="alpha">A-Z</button>
+            </div>
+          </div>
+
+          <div class="m-regions-search">
+            <input type="text" id="mModalSearchInput" placeholder="Filtrar por nome ou sigla...">
+          </div>
+
+          <div class="m-regions-list" id="mModalRegionsList">
+            <!-- Renderizado dinamicamente -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/data/geo-data.js"></script>
+  <script src="/js/mobile.js"></script>
+</body>
+</html>

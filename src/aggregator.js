@@ -65,9 +65,9 @@ class ElectionAggregator {
     const cargo = params.cargo || "1";
     let uf = (params.uf || "").toLowerCase();
     
-    // Governador e Senador exigem uma UF estadual (padrão 'sp' se vier 'br' ou vazio)
-    if ((cargo === "3" || cargo === "5") && (!uf || uf === "br")) {
-      uf = "sp";
+    // Cargos estaduais e proporcionais exigem uma UF estadual (padrão 'ms' se vier 'br' ou vazio)
+    if (cargo !== "1" && (!uf || uf === "br")) {
+      uf = "ms";
     }
 
     if (forceFake) {
@@ -81,9 +81,17 @@ class ElectionAggregator {
       this.cachedSnapshot = liveSnapshot;
       return liveSnapshot;
     } catch (err) {
-      console.log(`[Aviso TSE]: ${err.message}. Retornando estado oficial aguardando 17h.`);
-      const officeName = (cargo === "1") ? "Presidente" : ((cargo === "3") ? "Governador" : "Senador");
-      const ufUpper = (uf || "BR").toUpperCase();
+      console.log(`[Aviso TSE]: ${err.message}. Retornando estado oficial.`);
+      const ufUpper = (uf || "MS").toUpperCase();
+      let officeName = "Candidato";
+      switch(String(cargo)) {
+        case "1": officeName = "Presidente"; break;
+        case "3": officeName = "Governador"; break;
+        case "5": officeName = "Senador"; break;
+        case "6": officeName = "Deputado Federal"; break;
+        case "7": officeName = (ufUpper === "DF") ? "Deputado Distrital" : "Deputado Estadual"; break;
+        case "8": officeName = "Deputado Distrital"; break;
+      }
       const ufName = UF_NAMES[ufUpper] || (ufUpper === "BR" ? "Brasil" : ufUpper);
       const now = Date.now();
 

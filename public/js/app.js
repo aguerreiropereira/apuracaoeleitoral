@@ -295,10 +295,10 @@ document.addEventListener("DOMContentLoaded", () => {
       tab.classList.add("active");
       selectedCargo = tab.dataset.cargo;
 
-      // Governador e Senador exigem um estado específico
-      if ((selectedCargo === "3" || selectedCargo === "5") && (!selectedUf || selectedUf === "BR")) {
-        selectedUf = "SP";
-        ufSelect.value = "SP";
+      // Governador, Senador e Deputados exigem um estado específico
+      if (selectedCargo !== "1" && (!selectedUf || selectedUf === "BR")) {
+        selectedUf = "MS";
+        ufSelect.value = "MS";
       }
 
       syncMapSelection();

@@ -264,7 +264,15 @@ class CandidateService {
    */
   async buildStateCandidatePerformance(candidate, snapshot, ufUpper, cargo, isFake) {
     const hasStarted = snapshot.hasStarted === true;
-    const officeName = (cargo === "3") ? "Governador" : ((cargo === "5") ? "Senador" : "Deputado");
+    let officeName = "Candidato";
+    switch(String(cargo)) {
+      case "1": officeName = "Presidente"; break;
+      case "3": officeName = "Governador"; break;
+      case "5": officeName = "Senador"; break;
+      case "6": officeName = "Deputado Federal"; break;
+      case "7": officeName = (ufUpper === "DF") ? "Deputado Distrital" : "Deputado Estadual"; break;
+      case "8": officeName = "Deputado Distrital"; break;
+    }
     const stateName = UF_NAMES[ufUpper] || ufUpper;
     const candTotalVotes = parseInt(String(candidate.vap || "0").replace(/\D/g, ""), 10);
     const candPct = parseFloat(String(candidate.pvap || "0").replace(",", ".")) || 0;
@@ -310,7 +318,9 @@ class CandidateService {
       let capPayload = null;
 
       if (capCode) {
-        const cargoPadded = String(cargo).padStart(4, "0");
+        let actualCargo = String(cargo);
+        if (ufUpper === "DF" && actualCargo === "7") actualCargo = "8";
+        const cargoPadded = actualCargo.padStart(4, "0");
         const capUrl = `https://resultados.tse.jus.br/oficial/ele2026/${eleicaoId}/dados/${ufLower}/${ufLower}${capCode}-c${cargoPadded}-e00${eleicaoId}-u.jws`;
         try {
           capPayload = await tseClient.fetchJws(capUrl);
