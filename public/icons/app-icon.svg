@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00aa40"/>
+      <stop offset="100%" stop-color="#006c27"/>
+    </linearGradient>
+    <linearGradient id="yellowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe135"/>
+      <stop offset="100%" stop-color="#f5b800"/>
+    </linearGradient>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b3896"/>
+      <stop offset="100%" stop-color="#001a5e"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Fundo Verde Bandeira Suave -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)"/>
+
+  <!-- Losango Amarelo Ouro -->
+  <polygon points="256,76 436,256 256,436 76,256" fill="url(#yellowGrad)" filter="url(#shadow)"/>
+
+  <!-- Círculo Azul Celeste / Cruzeiro -->
+  <circle cx="256" cy="256" r="115" fill="url(#blueGrad)" filter="url(#shadow)"/>
+
+  <!-- Faixa Branca Central Suave da Bandeira -->
+  <path d="M 148,272 Q 256,236 364,244" fill="none" stroke="#ffffff" stroke-width="12" stroke-linecap="round" opacity="0.35"/>
+
+  <!-- Ícone Material Design de Urna Eleitoral e Voto Seguro -->
+  <g transform="translate(176, 176) scale(6.666)" fill="#ffffff">
+    <!-- how_to_vote Material Design Path -->
+    <path d="M18 13h-.68l-2 2h2.68v4H6v-4h2.68l-2-2H6c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2zm-6-2.58l3.29-3.29c.39-.39.39-1.02 0-1.41l-1.41-1.41c-.39-.39-1.02-.39-1.41 0L12 6.17l-1.88-1.88c-.39-.39-1.02-.39-1.41 0l-1.41 1.41c-.39.39-.39 1.02 0 1.41L10.59 10.42c.39.39 1.02.39 1.41 0zM12 13c-.55 0-1-.45-1-1V9.41l1.29 1.29c.39.39 1.02.39 1.41 0L15.41 9V12c0 .55-.45 1-1 1h-2.41z"/>
+    <!-- Checkmark estilizado -->
+    <path d="M10.47 10.88l-3.35-3.35 1.41-1.41 1.94 1.94 4.53-4.53 1.41 1.41z"/>
+  </g>
+
+  <!-- Ponto de Apuração / Live Dot -->
+  <circle cx="340" cy="172" r="14" fill="#00e676" stroke="#ffffff" stroke-width="4"/>
+</svg>

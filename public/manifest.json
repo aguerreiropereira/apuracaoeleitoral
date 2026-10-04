@@ -1,0 +1,63 @@
+{
+  "name": "Apuração Eleitoral Brasil 2026",
+  "short_name": "Apuração BR",
+  "description": "Painel oficial e em tempo real de apuração das Eleições Gerais do Brasil 2026 consumindo dados da CDN do TSE.",
+  "start_url": "/mobile",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#009739",
+  "theme_color": "#009739",
+  "categories": ["news", "government", "utilities"],
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Presidente",
+      "short_name": "Presidente",
+      "description": "Apuração para Presidente da República",
+      "url": "/mobile?cargo=1",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Governador",
+      "short_name": "Governador",
+      "description": "Apuração para Governador",
+      "url": "/mobile?cargo=3&uf=MS",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Deputados",
+      "short_name": "Deputados",
+      "description": "Apuração de Deputados Federais e Estaduais",
+      "url": "/mobile?cargo=6&uf=MS",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

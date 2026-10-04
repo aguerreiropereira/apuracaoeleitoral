@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGradMask" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00aa40"/>
+      <stop offset="100%" stop-color="#006c27"/>
+    </linearGradient>
+    <linearGradient id="yellowGradMask" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe135"/>
+      <stop offset="100%" stop-color="#f5b800"/>
+    </linearGradient>
+    <linearGradient id="blueGradMask" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b3896"/>
+      <stop offset="100%" stop-color="#001a5e"/>
+    </linearGradient>
+    <filter id="shadowMask" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+
+  <!-- Fundo Total para Ícone Adaptativo / Maskable -->
+  <rect width="512" height="512" fill="url(#bgGradMask)"/>
+
+  <!-- Conteúdo dentro da Safe Zone (80% central = raio 205) -->
+  <g transform="translate(0, 0)">
+    <!-- Losango Amarelo Ouro -->
+    <polygon points="256,105 407,256 256,407 105,256" fill="url(#yellowGradMask)" filter="url(#shadowMask)"/>
+
+    <!-- Círculo Azul Celeste -->
+    <circle cx="256" cy="256" r="95" fill="url(#blueGradMask)" filter="url(#shadowMask)"/>
+
+    <!-- Faixa Branca Central -->
+    <path d="M 166,270 Q 256,240 346,246" fill="none" stroke="#ffffff" stroke-width="10" stroke-linecap="round" opacity="0.35"/>
+
+    <!-- Urna Eleitoral / Voto Seguro -->
+    <g transform="translate(190, 190) scale(5.5)" fill="#ffffff">
+      <path d="M18 13h-.68l-2 2h2.68v4H6v-4h2.68l-2-2H6c-1.1 0-2 .9-2 2v4c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2v-4c0-1.1-.9-2-2-2zm-6-2.58l3.29-3.29c.39-.39.39-1.02 0-1.41l-1.41-1.41c-.39-.39-1.02-.39-1.41 0L12 6.17l-1.88-1.88c-.39-.39-1.02-.39-1.41 0l-1.41 1.41c-.39.39-.39 1.02 0 1.41L10.59 10.42c.39.39 1.02.39 1.41 0zM12 13c-.55 0-1-.45-1-1V9.41l1.29 1.29c.39.39 1.02.39 1.41 0L15.41 9V12c0 .55-.45 1-1 1h-2.41z"/>
+      <path d="M10.47 10.88l-3.35-3.35 1.41-1.41 1.94 1.94 4.53-4.53 1.41 1.41z"/>
+    </g>
+
+    <!-- Ponto Live -->
+    <circle cx="328" cy="184" r="12" fill="#00e676" stroke="#ffffff" stroke-width="3"/>
+  </g>
+</svg>

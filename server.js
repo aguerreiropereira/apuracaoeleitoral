@@ -26,7 +26,8 @@ const MIME_TYPES = {
   ".svg": "image/svg+xml",
   ".png": "image/png",
   ".jpg": "image/jpeg",
-  ".ico": "image/x-icon"
+  ".ico": "image/x-icon",
+  ".webmanifest": "application/manifest+json; charset=utf-8"
 };
 
 const server = http.createServer(async (req, res) => {
@@ -133,7 +134,12 @@ const server = http.createServer(async (req, res) => {
         res.end("Erro interno ao ler arquivo.");
         return;
       }
-      res.writeHead(200, { "Content-Type": contentType });
+      const headers = { "Content-Type": contentType };
+      if (safePath === "/sw.js") {
+        headers["Service-Worker-Allowed"] = "/";
+        headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+      }
+      res.writeHead(200, headers);
       res.end(content);
     });
   });

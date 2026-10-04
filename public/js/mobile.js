@@ -1,15 +1,32 @@
 /**
  * Mobile-First JavaScript - Apuração Eleitoral Brasil 2026
- * Otimizado para smartphones, toque ágil e renderização fluida de Deputados.
+ * Otimizado para smartphones, toque ágil, PWA e persistência robusta de filtros.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-  // 1. Estado da Aplicação
+  // ========================================================
+  // 1. Estado da Aplicação & Persistência de Filtros
+  // ========================================================
+  const STORAGE_CARGO_KEY = "tse_mobile_selected_cargo";
+  const STORAGE_UF_KEY = "tse_mobile_selected_uf";
+  const STORAGE_THEME_KEY = "tse_panel_theme";
+
   const urlParams = new URLSearchParams(window.location.search);
-  let selectedCargo = urlParams.get("cargo") || "1";
-  let selectedUf = (urlParams.get("uf") || (selectedCargo === "1" ? "" : "MS")).toUpperCase();
-  const isFakeMode = urlParams.get("mode") === "fake";
   
+  // Persistência: URL > LocalStorage > Padrão
+  let selectedCargo = urlParams.get("cargo") || localStorage.getItem(STORAGE_CARGO_KEY) || "1";
+  let selectedUf = (urlParams.get("uf") || localStorage.getItem(STORAGE_UF_KEY) || (selectedCargo === "1" ? "" : "MS")).toUpperCase();
+  const isFakeMode = urlParams.get("mode") === "fake";
+
+  // Se for cargo estadual e não tiver estado selecionado, padroniza para MS
+  if (selectedCargo !== "1" && (!selectedUf || selectedUf === "BR")) {
+    selectedUf = "MS";
+  }
+
+  // Grava estado inicial no localStorage
+  localStorage.setItem(STORAGE_CARGO_KEY, selectedCargo);
+  localStorage.setItem(STORAGE_UF_KEY, selectedUf);
+
   let currentSnapshot = null;
   let currentCandidates = [];
   let candidateSearchText = "";
@@ -78,14 +95,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // UF Drawer Elements
   const mUfDrawerOverlay = document.getElementById("mUfDrawerOverlay");
-  const mUfDrawerSheet = document.getElementById("mUfDrawerSheet");
   const mBtnCloseUfDrawer = document.getElementById("mBtnCloseUfDrawer");
   const mDrawerUfSearch = document.getElementById("mDrawerUfSearch");
   const mUfList = document.getElementById("mUfList");
 
   // Candidate Performance Modal Elements
   const mCandModalOverlay = document.getElementById("mCandModalOverlay");
-  const mCandModalSheet = document.getElementById("mCandModalSheet");
   const mBtnCloseCandModal = document.getElementById("mBtnCloseCandModal");
   const mModalLoading = document.getElementById("mModalLoading");
   const mModalContent = document.getElementById("mModalContent");
@@ -119,22 +134,37 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentModalFilter = "";
 
   // ========================================================
-  // 2. Gerenciamento de Tema (Claro / Escuro)
+  // 2. Registro do PWA Service Worker
   // ========================================================
-  const savedTheme = localStorage.getItem("tse_panel_theme") || "light";
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("/sw.js")
+        .then((reg) => {
+          console.log("[PWA] Service Worker registrado com escopo:", reg.scope);
+        })
+        .catch((err) => {
+          console.warn("[PWA] Erro ao registrar Service Worker:", err);
+        });
+    });
+  }
+
+  // ========================================================
+  // 3. Gerenciamento de Tema (Claro / Escuro)
+  // ========================================================
+  const savedTheme = localStorage.getItem(STORAGE_THEME_KEY) || "light";
   applyTheme(savedTheme);
 
   function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("tse_panel_theme", theme);
+    localStorage.setItem(STORAGE_THEME_KEY, theme);
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (theme === "dark") {
-      mIconSun.style.display = "inline-block";
-      mIconMoon.style.display = "none";
+      if (mIconSun) mIconSun.style.display = "inline-block";
+      if (mIconMoon) mIconMoon.style.display = "none";
       if (metaTheme) metaTheme.setAttribute("content", "#0b1120");
     } else {
-      mIconSun.style.display = "none";
-      mIconMoon.style.display = "inline-block";
+      if (mIconSun) mIconSun.style.display = "none";
+      if (mIconMoon) mIconMoon.style.display = "inline-block";
       if (metaTheme) metaTheme.setAttribute("content", "#009739");
     }
   }
@@ -147,22 +177,62 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ========================================================
-  // 3. Controle de Seleção de Cargo & UF
+  // 4. Controle Persistente de Cargo & Abrangência
   // ========================================================
+  function syncCargoUI() {
+    if (!mCargoScroll) return;
+    mCargoScroll.querySelectorAll(".m-cargo-chip").forEach(chip => {
+      chip.classList.toggle("active", chip.dataset.cargo === selectedCargo);
+    });
+  }
+
+  function setCargo(newCargo) {
+    selectedCargo = String(newCargo);
+    localStorage.setItem(STORAGE_CARGO_KEY, selectedCargo);
+
+    // Governador, Senador e Deputados exigem UF estadual
+    if (selectedCargo !== "1" && (!selectedUf || selectedUf === "BR")) {
+      const savedUf = localStorage.getItem(STORAGE_UF_KEY);
+      selectedUf = (savedUf && savedUf !== "BR") ? savedUf : "MS";
+      localStorage.setItem(STORAGE_UF_KEY, selectedUf);
+    }
+
+    // Atualiza parâmetros da URL sem recarregar
+    syncUrlParams();
+    syncCargoUI();
+    updateUfDisplay();
+
+    // Requisita imediatamente e reinicia o listener SSE no novo cargo
+    fetchSnapshot();
+    startSSE();
+  }
+
+  function setUf(newUf) {
+    selectedUf = newUf.toUpperCase();
+    localStorage.setItem(STORAGE_UF_KEY, selectedUf);
+
+    syncUrlParams();
+    updateUfDisplay();
+
+    fetchSnapshot();
+    startSSE();
+  }
+
+  function syncUrlParams() {
+    const newUrl = new URL(window.location);
+    newUrl.searchParams.set("cargo", selectedCargo);
+    if (selectedUf && selectedUf !== "BR") {
+      newUrl.searchParams.set("uf", selectedUf);
+    } else {
+      newUrl.searchParams.delete("uf");
+    }
+    window.history.replaceState({}, "", newUrl.toString());
+  }
+
   if (mCargoScroll) {
     mCargoScroll.querySelectorAll(".m-cargo-chip").forEach(chip => {
       chip.addEventListener("click", () => {
-        mCargoScroll.querySelectorAll(".m-cargo-chip").forEach(c => c.classList.remove("active"));
-        chip.classList.add("active");
-        selectedCargo = chip.dataset.cargo;
-
-        // Se for cargo estadual e UF for Brasil, define para MS ou estado anterior
-        if (selectedCargo !== "1" && (!selectedUf || selectedUf === "BR")) {
-          selectedUf = "MS";
-        }
-
-        updateUfDisplay();
-        fetchSnapshot();
+        setCargo(chip.dataset.cargo);
       });
     });
   }
@@ -178,14 +248,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ========================================================
-  // 4. Drawer de Seleção de Estado (Bottom Sheet)
+  // 5. Drawer de Seleção de Estado (Bottom Sheet)
   // ========================================================
   function renderUfList(filterText = "") {
     if (!mUfList) return;
     const q = filterText.toLowerCase().trim();
-    const isPresident = selectedCargo === "1";
+    const isPresident = (selectedCargo === "1");
 
-    // Para presidente, pode selecionar 'Brasil'; para cargos estaduais, apenas estados
     const ufsToShow = isPresident ? ALL_UFS : ALL_UFS.filter(u => u.uf !== "");
     const filtered = ufsToShow.filter(u => 
       u.name.toLowerCase().includes(q) || u.badge.toLowerCase().includes(q)
@@ -199,17 +268,15 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="m-uf-opt-badge">${item.badge}</span>
             <span class="m-uf-opt-name">${item.name}</span>
           </div>
-          ${isSelected ? `<span style="color:var(--m-green); font-weight:800;">✓</span>` : ""}
+          ${isSelected ? `<span class="material-symbols-outlined" style="color:var(--m-green); font-size:18px; font-weight:800;">check</span>` : ""}
         </div>
       `;
     }).join("");
 
     mUfList.querySelectorAll(".m-uf-opt").forEach(opt => {
       opt.addEventListener("click", () => {
-        selectedUf = opt.dataset.uf;
         closeUfDrawer();
-        updateUfDisplay();
-        fetchSnapshot();
+        setUf(opt.dataset.uf);
       });
     });
   }
@@ -222,7 +289,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function closeUfDrawer() {
-    if (mUfDrawerOverlay) mUfDrawerOverlay.style.display = "none";
+    if (!mUfDrawerOverlay) return;
+    mUfDrawerOverlay.style.display = "none";
   }
 
   if (mBtnOpenUfDrawer) mBtnOpenUfDrawer.addEventListener("click", openUfDrawer);
@@ -239,14 +307,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ========================================================
-  // 5. Conexão em Tempo Real & Carregamento de Dados
+  // 6. Conexão em Tempo Real & Carregamento de Dados
   // ========================================================
   async function fetchSnapshot() {
     if (mIconRefresh) mIconRefresh.classList.add("spinning");
 
+    const targetCargo = selectedCargo;
+    const targetUf = selectedUf || (selectedCargo === "1" ? "br" : "ms");
+
     const query = new URLSearchParams({
-      cargo: selectedCargo,
-      uf: selectedUf || (selectedCargo === "1" ? "br" : "sp")
+      cargo: targetCargo,
+      uf: targetUf
     });
     if (isFakeMode) query.set("mode", "fake");
 
@@ -254,7 +325,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch(`/api/state?${query.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      renderSnapshot(data);
+      
+      // Ignora resposta desatualizada se o usuário tiver trocado de cargo
+      if (String(data.officeCode || "") === String(selectedCargo) || !data.officeCode) {
+        renderSnapshot(data);
+      }
     } catch (err) {
       console.error("[Mobile Fetch Error]:", err);
     } finally {
@@ -272,9 +347,12 @@ document.addEventListener("DOMContentLoaded", () => {
       sseEventSource = null;
     }
 
+    const currentReqCargo = selectedCargo;
+    const currentReqUf = selectedUf || (selectedCargo === "1" ? "br" : "ms");
+
     const query = new URLSearchParams({
-      cargo: selectedCargo,
-      uf: selectedUf || (selectedCargo === "1" ? "br" : "sp")
+      cargo: currentReqCargo,
+      uf: currentReqUf
     });
     if (isFakeMode) query.set("mode", "fake");
 
@@ -282,7 +360,10 @@ document.addEventListener("DOMContentLoaded", () => {
     sseEventSource.addEventListener("snapshot", (e) => {
       try {
         const data = JSON.parse(e.data);
-        renderSnapshot(data);
+        // Garante que evento SSE antigo não sobreponha a seleção ativa do usuário
+        if (String(data.officeCode || "") === String(selectedCargo)) {
+          renderSnapshot(data);
+        }
       } catch (err) {
         console.error("[SSE Parse Error]:", err);
       }
@@ -290,14 +371,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     sseEventSource.onerror = () => {
       if (sseEventSource) sseEventSource.close();
-      // Reconexão / polling a cada 15 segundos
       clearTimeout(refreshTimer);
-      refreshTimer = setTimeout(fetchSnapshot, 15000);
+      refreshTimer = setTimeout(() => {
+        fetchSnapshot();
+        startSSE();
+      }, 15000);
     };
   }
 
   // ========================================================
-  // 6. Renderização dos Dados na Tela Mobile
+  // 7. Renderização dos Dados na Tela Mobile
   // ========================================================
   function renderSnapshot(data) {
     currentSnapshot = data;
@@ -310,7 +393,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (mOfficeBadge) mOfficeBadge.textContent = officeName;
     if (mSummaryLocation) mSummaryLocation.textContent = locationName;
-    if (mModeIndicator) mModeIndicator.textContent = data.mode === "fake" ? "Modo Simulação" : "Oficial TSE";
+    if (mModeIndicator) mModeIndicator.textContent = (data.mode === "fake") ? "Modo Simulação" : "Oficial TSE";
 
     // Progresso de Urnas
     const pctStr = scopeData.pctSectionsDisplay || "0,00";
@@ -328,6 +411,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const now = new Date();
     if (mLastUpdate) mLastUpdate.textContent = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
+    // Garante que o chip ativo corresponda exatamente ao cargo
+    syncCargoUI();
+
     renderCandidatesFeed();
   }
 
@@ -337,14 +423,14 @@ document.addEventListener("DOMContentLoaded", () => {
       case "3": return "Governador";
       case "5": return "Senador";
       case "6": return "Deputado Federal";
-      case "7": return uf === "DF" ? "Deputado Distrital" : "Deputado Estadual";
+      case "7": return (uf === "DF") ? "Deputado Distrital" : "Deputado Estadual";
       case "8": return "Deputado Distrital";
       default: return "Candidatos";
     }
   }
 
   // ========================================================
-  // 7. Feed de Candidatos com Busca em Tempo Real (Deputados)
+  // 8. Feed de Candidatos com Busca Instantânea (Deputados)
   // ========================================================
   function renderCandidatesFeed() {
     if (!mCandidatesList) return;
@@ -371,18 +457,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (list.length === 0) {
       mCandidatesList.innerHTML = `
         <div style="text-align:center; padding: 40px 16px; color:var(--text-dim); background:var(--bg-card); border-radius:14px; border:1px solid var(--border-subtle);">
-          <div style="font-size:32px; margin-bottom:8px;">🔍</div>
-          <strong style="color:var(--text-main); font-size:14px;">Nenhum candidato localizado</strong>
-          <p style="font-size:12px; margin-top:4px;">Tente pesquisar por outro nome, sigla ou número de urna.</p>
+          <div class="material-symbols-outlined" style="font-size:40px; margin-bottom:8px; color:var(--text-dim);">search_off</div>
+          <strong style="color:var(--text-main); font-size:14px; display:block;">Nenhum candidato localizado</strong>
+          <p style="font-size:12px; margin-top:4px;">Tente pesquisar por outro nome, sigla partidária ou número de urna.</p>
         </div>
       `;
       return;
     }
 
-    // Calcula o percentual máximo para barras proporcionais
     const topPct = parseFloat(String(list[0]?.pvap || "0").replace(",", ".")) || 1;
 
-    mCandidatesList.innerHTML = list.map((cand, idx) => {
+    mCandidatesList.innerHTML = list.map((cand) => {
       const pctStr = cand.pvap || "0,00";
       const pctNum = parseFloat(pctStr.replace(",", ".")) || 0;
       const barWidth = Math.min(100, Math.max(3, (pctNum / Math.max(0.1, topPct)) * 100));
@@ -420,13 +505,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <div class="m-cand-bottom-row">
             <span class="cand-badge-status ${statusCls}">${statusText}</span>
-            <span class="m-cand-detail-hint">Ver Desempenho 📊</span>
+            <span class="m-cand-detail-hint">
+              <span class="material-symbols-outlined" style="font-size:15px; vertical-align:middle;">analytics</span>
+              Ver Desempenho
+            </span>
           </div>
         </article>
       `;
     }).join("");
 
-    // Adiciona listener para abrir o modal de desempenho detalhado
     mCandidatesList.querySelectorAll(".m-cand-card").forEach(card => {
       card.addEventListener("click", () => {
         const sqcand = card.dataset.sqcand;
@@ -455,7 +542,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ========================================================
-  // 8. Modal / Bottom Sheet de Desempenho do Candidato
+  // 9. Modal / Bottom Sheet de Desempenho do Candidato
   // ========================================================
   function openCandidateModal(sqcand, n) {
     if (!mCandModalOverlay) return;
@@ -469,7 +556,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const query = new URLSearchParams({
       cargo: selectedCargo,
-      uf: selectedUf || (selectedCargo === "1" ? "br" : "sp"),
+      uf: selectedUf || (selectedCargo === "1" ? "br" : "ms"),
       sqcand: sqcand || "",
       n: n || ""
     });
@@ -491,7 +578,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function closeCandidateModal() {
-    if (mCandModalOverlay) mCandModalOverlay.style.display = "none";
+    if (!mCandModalOverlay) return;
+    mCandModalOverlay.style.display = "none";
   }
 
   if (mBtnCloseCandModal) mBtnCloseCandModal.addEventListener("click", closeCandidateModal);
@@ -648,15 +736,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ========================================================
-  // 9. Inicialização
+  // 10. Inicialização
   // ========================================================
-  // Ativa o chip de cargo correto
-  if (mCargoScroll) {
-    mCargoScroll.querySelectorAll(".m-cargo-chip").forEach(c => {
-      c.classList.toggle("active", c.dataset.cargo === selectedCargo);
-    });
-  }
-
+  syncCargoUI();
   updateUfDisplay();
   fetchSnapshot();
   startSSE();

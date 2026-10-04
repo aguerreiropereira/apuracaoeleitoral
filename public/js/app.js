@@ -486,7 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <strong>${cand.n}</strong> · ${cand.sg || ""} ${cand.cc ? "· " + cand.cc : ""}
             </div>
             ${viceRow}
-            <div class="cand-action-hint">Ver desempenho por regiões ➔</div>
+            <div class="cand-action-hint">Ver desempenho por regiões <span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle;">arrow_forward</span></div>
           </div>
 
           <div class="cand-votes-box">
