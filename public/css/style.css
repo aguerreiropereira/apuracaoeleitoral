@@ -530,12 +530,30 @@ body {
   font-weight: 600;
 }
 
-/* Grade Principal */
+/* Grade Principal com 3 Colunas (Mapa + Sidebar Geográfica + Candidatos) */
 .content-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(420px, 1.25fr);
-  gap: 22px;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.9fr) minmax(380px, 1.15fr);
+  gap: 18px;
   align-items: start;
+}
+
+@media (max-width: 1400px) {
+  .content-grid {
+    grid-template-columns: minmax(0, 1.15fr) minmax(380px, 1.1fr);
+  }
+  .sidebar-panel {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 1024px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+  .sidebar-panel {
+    grid-column: span 1;
+  }
 }
 
 .panel-card {
@@ -636,6 +654,349 @@ body {
   height: 12px;
   border-radius: 3px;
   display: inline-block;
+}
+
+/* Placar dos Dois Primeiros Colocados no Mapa */
+.map-scoreboard {
+  background: var(--surface-subtle);
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.scoreboard-leaders {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sb-cand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.sb-cand.right {
+  justify-content: flex-end;
+}
+
+.sb-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.sb-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.sb-meta.right {
+  text-align: right;
+}
+
+.sb-meta strong {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.sb-states {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.sb-vs {
+  font-size: 10px;
+  font-weight: 900;
+  color: var(--text-dim);
+  background: var(--surface-border);
+  padding: 2px 6px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.sb-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: var(--surface-border);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+}
+
+.sb-bar-fill {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+/* ========================================================
+   SIDEBAR GEOGRÁFICA (REGIÕES E ESTADOS)
+   ======================================================== */
+.sidebar-panel {
+  display: flex;
+  flex-direction: column;
+  max-height: 740px;
+  overflow: hidden;
+}
+
+.sidebar-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--surface-subtle);
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 12px;
+}
+
+.sidebar-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-tab.active {
+  background: var(--surface);
+  color: var(--pct-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.sidebar-tab-content {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.sidebar-tab-content::-webkit-scrollbar {
+  width: 5px;
+}
+.sidebar-tab-content::-webkit-scrollbar-thumb {
+  background: var(--surface-border);
+  border-radius: 4px;
+}
+
+/* Feed de Regiões */
+.regions-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.region-card {
+  background: var(--surface-subtle);
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  padding: 12px;
+  transition: all 0.2s ease;
+}
+
+.region-card:hover {
+  border-color: var(--br-green-light);
+  transform: translateY(-1px);
+}
+
+.region-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.region-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.region-sec-pct {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--pct-color);
+}
+
+.region-bar-bg {
+  width: 100%;
+  height: 5px;
+  background: var(--surface-border);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.region-bar-fill {
+  height: 100%;
+  background: var(--pct-color);
+  transition: width 0.4s ease;
+}
+
+.region-candidates-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.region-cand-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.region-cand-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.region-cand-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.region-cand-name {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.region-cand-pct {
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.region-states-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--surface-border);
+}
+
+.state-chip {
+  font-size: 9px;
+  font-weight: 800;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.state-chip:hover {
+  background: var(--pct-color);
+  color: #ffffff;
+  border-color: var(--pct-color);
+}
+
+/* Feed de Estados */
+.sidebar-search-box {
+  display: flex;
+  align-items: center;
+  background: var(--surface-subtle);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+}
+
+.sidebar-search-box input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  outline: none;
+  font-size: 12px;
+  color: var(--text-main);
+  margin-left: 6px;
+}
+
+.states-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.state-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface-subtle);
+  border: 1px solid var(--surface-border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.state-item-row:hover {
+  background: var(--surface);
+  border-color: var(--pct-color);
+}
+
+.state-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.state-item-badge {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: #ffffff;
+  background: var(--br-blue);
+}
+
+.state-item-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.state-item-sec {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.state-item-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: right;
+}
+
+.state-item-leader-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.state-item-leader-pct {
+  font-size: 12px;
+  font-weight: 800;
 }
 
 /* Tooltip do Mapa */

@@ -1127,3 +1127,325 @@ body {
   color: var(--text-dim);
   font-weight: 600;
 }
+
+/* ========================================================
+   Placar Mobile e Apuração Territorial (Regiões e Estados)
+   ======================================================== */
+.m-scoreboard-card {
+  margin-bottom: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.m-sb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.m-sb-title {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-main);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.m-sb-sub {
+  font-size: 11px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.m-sb-leaders {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.m-sb-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.m-sb-item.right {
+  justify-content: flex-end;
+}
+
+.m-sb-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.m-sb-meta {
+  display: flex;
+  flex-direction: column;
+}
+
+.m-sb-meta.right {
+  text-align: right;
+}
+
+.m-sb-meta strong {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.m-sb-count {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.m-sb-vs {
+  font-size: 9px;
+  font-weight: 900;
+  color: var(--text-dim);
+  background: var(--bg-input);
+  padding: 2px 5px;
+  border-radius: 4px;
+}
+
+.m-sb-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: var(--bg-input);
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.m-sb-bar-fill {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.m-btn-view-regions {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.m-btn-view-regions:active {
+  background: var(--border-subtle);
+}
+
+.sidebar-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--bg-input);
+  border-radius: 8px;
+  padding: 4px;
+}
+
+.sidebar-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-tab.active {
+  background: var(--bg-surface);
+  color: var(--pct-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.regions-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.region-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.region-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.region-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.region-sec-pct {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--pct-color);
+}
+
+.region-bar-bg {
+  width: 100%;
+  height: 5px;
+  background: var(--border-subtle);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.region-bar-fill {
+  height: 100%;
+  background: var(--pct-color);
+}
+
+.region-candidates-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.region-cand-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+}
+
+.region-cand-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.region-cand-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.region-cand-name {
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.region-cand-pct {
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.region-states-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 6px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.state-chip {
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 7px;
+  border-radius: 4px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-main);
+  cursor: pointer;
+}
+
+.state-chip.selected {
+  border-color: var(--m-yellow);
+  background: rgba(254, 209, 0, 0.15);
+}
+
+.states-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.state-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.state-item-row.selected {
+  border-color: var(--pct-color);
+  background: rgba(0, 151, 57, 0.08);
+}
+
+.state-item-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.state-item-badge {
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #ffffff;
+}
+
+.state-item-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.state-item-sec {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.state-item-right {
+  text-align: right;
+}
+
+.state-item-leader-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.state-item-leader-pct {
+  font-size: 12px;
+  font-weight: 800;
+}

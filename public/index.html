@@ -210,6 +210,31 @@
           <button id="btnResetMap" class="btn btn-sm btn-ghost" hidden>Ver Brasil Inteiro</button>
         </div>
 
+        <!-- Placar dos Dois Primeiros Colocados no Mapa -->
+        <div class="map-scoreboard" id="mapScoreboard">
+          <div class="scoreboard-leaders">
+            <div class="sb-cand left" id="sbLeader1">
+              <span class="sb-color-dot" id="sbDot1" style="background: #1f4fbf"></span>
+              <div class="sb-meta">
+                <strong id="sbName1">CARREGANDO...</strong>
+                <span class="sb-states" id="sbStates1">0 estados</span>
+              </div>
+            </div>
+            <span class="sb-vs">VS</span>
+            <div class="sb-cand right" id="sbLeader2">
+              <div class="sb-meta right">
+                <strong id="sbName2">CARREGANDO...</strong>
+                <span class="sb-states" id="sbStates2">0 estados</span>
+              </div>
+              <span class="sb-color-dot" id="sbDot2" style="background: #c8202f"></span>
+            </div>
+          </div>
+          <div class="sb-bar-wrap">
+            <div class="sb-bar-fill" id="sbBar1" style="width: 50%; background: #1f4fbf;"></div>
+            <div class="sb-bar-fill" id="sbBar2" style="width: 50%; background: #c8202f;"></div>
+          </div>
+        </div>
+
         <div class="map-viewport">
           <svg id="brazilMap" viewBox="0 0 1000 1000" role="img" aria-label="Mapa da apuração eleitoral do Brasil"></svg>
           <div id="mapTooltip" class="tse-tooltip" hidden></div>
@@ -217,11 +242,57 @@
 
         <!-- Legenda dos Candidatos Líderes no Mapa -->
         <div class="map-legend" id="mapLegend">
-          <span class="legend-item"><i style="background: #c8202f"></i> LULA (PT)</span>
-          <span class="legend-item"><i style="background: #1f4fbf"></i> BOLSONARO (PL)</span>
-          <span class="legend-item"><i style="background: #334155"></i> Sem apuração</span>
+          <span class="legend-item"><i id="legDot1" style="background: #1f4fbf"></i> <span id="legName1">FLÁVIO BOLSONARO (PL)</span></span>
+          <span class="legend-item"><i id="legDot2" style="background: #c8202f"></i> <span id="legName2">LULA (PT)</span></span>
+          <span class="legend-item"><i style="background: #94a3b8"></i> Sem apuração</span>
         </div>
       </section>
+
+      <!-- Coluna Central: Sidebar Geográfica (Regiões e Estados) -->
+      <aside class="panel-card sidebar-panel" id="geoSidebar">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">Apuração Territorial</h3>
+            <p class="panel-desc">Desempenho por macrorregião e UF</p>
+          </div>
+        </div>
+
+        <!-- Abas da Sidebar -->
+        <div class="sidebar-tabs" id="sidebarTabs">
+          <button class="sidebar-tab active" data-tab="regions" id="tabBtnRegions">
+            <span class="material-symbols-outlined" style="font-size: 16px;">public</span>
+            Regiões (5)
+          </button>
+          <button class="sidebar-tab" data-tab="states" id="tabBtnStates">
+            <span class="material-symbols-outlined" style="font-size: 16px;">map</span>
+            Estados (27)
+          </button>
+        </div>
+
+        <!-- Aba 1: Regiões -->
+        <div class="sidebar-tab-content" id="tabContentRegions">
+          <div class="regions-feed" id="regionsFeed">
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <span>Carregando regiões...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Aba 2: Estados -->
+        <div class="sidebar-tab-content" id="tabContentStates" style="display: none;">
+          <div class="sidebar-search-box">
+            <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-dim);">search</span>
+            <input type="text" id="sidebarStateSearch" placeholder="Buscar estado (ex: SP, RJ, Bahia)..." />
+          </div>
+          <div class="states-feed" id="statesFeed">
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <span>Carregando estados...</span>
+            </div>
+          </div>
+        </div>
+      </aside>
 
       <!-- Coluna da Direita: Lista Oficial dos Candidatos -->
       <section class="panel-card results-panel">

@@ -129,6 +129,27 @@ document.addEventListener("DOMContentLoaded", () => {
   const mModalSearchInput = document.getElementById("mModalSearchInput");
   const mModalRegionsList = document.getElementById("mModalRegionsList");
 
+  // Scoreboard e Drawer de Regiões
+  const mScoreboardCard = document.getElementById("mScoreboardCard");
+  const mSbDot1 = document.getElementById("mSbDot1");
+  const mSbName1 = document.getElementById("mSbName1");
+  const mSbCount1 = document.getElementById("mSbCount1");
+  const mSbBar1 = document.getElementById("mSbBar1");
+  const mSbDot2 = document.getElementById("mSbDot2");
+  const mSbName2 = document.getElementById("mSbName2");
+  const mSbCount2 = document.getElementById("mSbCount2");
+  const mSbBar2 = document.getElementById("mSbBar2");
+  const mBtnOpenRegions = document.getElementById("mBtnOpenRegions");
+
+  const mRegionsDrawerOverlay = document.getElementById("mRegionsDrawerOverlay");
+  const mBtnCloseRegionsDrawer = document.getElementById("mBtnCloseRegionsDrawer");
+  const mTabBtnRegs = document.getElementById("mTabBtnRegs");
+  const mTabBtnUfs = document.getElementById("mTabBtnUfs");
+  const mRegionsList = document.getElementById("mRegionsList");
+  const mStatesList = document.getElementById("mStatesList");
+
+  let mGeoSummary = null;
+
   let currentModalData = null;
   let currentModalSort = "pct";
   let currentModalFilter = "";
@@ -415,6 +436,7 @@ document.addEventListener("DOMContentLoaded", () => {
     syncCargoUI();
 
     renderCandidatesFeed();
+    fetchGeoSummaryMobile();
   }
 
   function getOfficeName(cargo, uf) {
@@ -736,10 +758,203 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ========================================================
+  // 9.2 Apuração Territorial Mobile (Regiões e Estados)
+  // ========================================================
+  function renderMobileScoreboard() {
+    if (!mScoreboardCard) return;
+    if (selectedCargo !== "1" || !mGeoSummary || !mGeoSummary.topTwo || mGeoSummary.topTwo.length < 2) {
+      mScoreboardCard.style.display = "none";
+      return;
+    }
+
+    const c1 = mGeoSummary.topTwo[0];
+    const c2 = mGeoSummary.topTwo[1];
+
+    if (mSbDot1) mSbDot1.style.background = c1.cor || "#1f4fbf";
+    if (mSbName1) mSbName1.textContent = `${c1.nm} (${c1.sg})`;
+    if (mSbCount1) mSbCount1.textContent = `${c1.statesCount} ${c1.statesCount === 1 ? 'estado' : 'estados'}`;
+
+    if (mSbDot2) mSbDot2.style.background = c2.cor || "#c8202f";
+    if (mSbName2) mSbName2.textContent = `${c2.nm} (${c2.sg})`;
+    if (mSbCount2) mSbCount2.textContent = `${c2.statesCount} ${c2.statesCount === 1 ? 'estado' : 'estados'}`;
+
+    const totalWon = (c1.statesCount + c2.statesCount) || 1;
+    const pct1 = Math.round((c1.statesCount / totalWon) * 100);
+    const pct2 = 100 - pct1;
+
+    if (mSbBar1) {
+      mSbBar1.style.width = `${pct1}%`;
+      mSbBar1.style.background = c1.cor || "#1f4fbf";
+    }
+    if (mSbBar2) {
+      mSbBar2.style.width = `${pct2}%`;
+      mSbBar2.style.background = c2.cor || "#c8202f";
+    }
+
+    mScoreboardCard.style.display = "block";
+  }
+
+  function renderMobileRegionsDrawer() {
+    if (!mRegionsList || !mGeoSummary?.regions) return;
+
+    mRegionsList.innerHTML = mGeoSummary.regions.map(r => {
+      const c1 = r.leader;
+      const c2 = r.runnerUp;
+
+      const c1Html = c1 ? `
+        <div class="region-cand-item">
+          <div class="region-cand-left">
+            <span class="region-cand-dot" style="background: ${c1.cor || '#1f4fbf'};"></span>
+            <span class="region-cand-name">1º ${c1.nm} (${c1.sg})</span>
+          </div>
+          <span class="region-cand-pct">${c1.pvap}%</span>
+        </div>
+      ` : `<div style="font-size:11px; color:var(--text-dim)">Sem apuração</div>`;
+
+      const c2Html = c2 ? `
+        <div class="region-cand-item">
+          <div class="region-cand-left">
+            <span class="region-cand-dot" style="background: ${c2.cor || '#c8202f'};"></span>
+            <span class="region-cand-name">2º ${c2.nm} (${c2.sg})</span>
+          </div>
+          <span class="region-cand-pct">${c2.pvap}%</span>
+        </div>
+      ` : "";
+
+      const chipsHtml = (r.ufs || []).map(uf => {
+        const ufState = mGeoSummary.states?.[uf];
+        const dotColor = ufState?.leader?.cor || '#94a3b8';
+        const isCurrent = (selectedUf === uf);
+        return `
+          <button class="state-chip ${isCurrent ? 'selected' : ''}" data-uf="${uf}">
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${dotColor}; margin-right:3px;"></span>${uf}
+          </button>
+        `;
+      }).join("");
+
+      return `
+        <div class="region-card">
+          <div class="region-head">
+            <span class="region-name">Região ${r.region}</span>
+            <span class="region-sec-pct">${r.pctSections}% apurado</span>
+          </div>
+          <div class="region-bar-bg">
+            <div class="region-bar-fill" style="width: ${r.pctSectionsNum}%;"></div>
+          </div>
+          <div class="region-candidates-row">
+            ${c1Html}
+            ${c2Html}
+          </div>
+          <div class="region-states-chips">
+            ${chipsHtml}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    mRegionsList.querySelectorAll(".state-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        setUf(chip.dataset.uf);
+        closeRegionsDrawer();
+      });
+    });
+
+    if (mStatesList && mGeoSummary.statesList) {
+      const sorted = [...mGeoSummary.statesList].sort((a, b) => b.secPctNum - a.secPctNum);
+      mStatesList.innerHTML = sorted.map(s => {
+        const isSelected = (selectedUf === s.uf);
+        const dotColor = s.leader?.cor || "#94a3b8";
+        const leaderName = s.leader ? `${s.leader.nm} (${s.leader.sg})` : "Aguardando";
+        const leaderPct = s.leader ? `${s.leader.pvap}%` : "0,00%";
+
+        return `
+          <div class="state-item-row ${isSelected ? 'selected' : ''}" data-uf="${s.uf}">
+            <div class="state-item-left">
+              <span class="state-item-badge" style="background:${dotColor}">${s.uf}</span>
+              <div>
+                <div class="state-item-name">${s.name}</div>
+                <div class="state-item-sec">${s.region} · ${s.secPct}% apurado</div>
+              </div>
+            </div>
+            <div class="state-item-right">
+              <div>
+                <div style="font-size:11px; font-weight:700; color:var(--text-main);">${leaderName}</div>
+                <div class="state-item-leader-pct" style="color:${dotColor}">${leaderPct}</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      mStatesList.querySelectorAll(".state-item-row").forEach(row => {
+        row.addEventListener("click", () => {
+          setUf(row.dataset.uf);
+          closeRegionsDrawer();
+        });
+      });
+    }
+  }
+
+  function openRegionsDrawer() {
+    if (mRegionsDrawerOverlay) {
+      mRegionsDrawerOverlay.style.display = "flex";
+      renderMobileRegionsDrawer();
+    }
+  }
+
+  function closeRegionsDrawer() {
+    if (mRegionsDrawerOverlay) {
+      mRegionsDrawerOverlay.style.display = "none";
+    }
+  }
+
+  if (mBtnOpenRegions) mBtnOpenRegions.addEventListener("click", openRegionsDrawer);
+  if (mBtnCloseRegionsDrawer) mBtnCloseRegionsDrawer.addEventListener("click", closeRegionsDrawer);
+  if (mRegionsDrawerOverlay) {
+    mRegionsDrawerOverlay.addEventListener("click", (e) => {
+      if (e.target === mRegionsDrawerOverlay) closeRegionsDrawer();
+    });
+  }
+
+  if (mTabBtnRegs && mTabBtnUfs) {
+    mTabBtnRegs.addEventListener("click", () => {
+      mTabBtnRegs.classList.add("active");
+      mTabBtnUfs.classList.remove("active");
+      mRegionsList.style.display = "flex";
+      mStatesList.style.display = "none";
+    });
+    mTabBtnUfs.addEventListener("click", () => {
+      mTabBtnUfs.classList.add("active");
+      mTabBtnRegs.classList.remove("active");
+      mRegionsList.style.display = "none";
+      mStatesList.style.display = "flex";
+    });
+  }
+
+  let mGeoFetchInProgress = false;
+  function fetchGeoSummaryMobile() {
+    if (mGeoFetchInProgress) return;
+    mGeoFetchInProgress = true;
+    fetch(`/api/geo-summary${isFakeMode ? '?mode=fake' : ''}`)
+      .then(res => res.json())
+      .then(data => {
+        mGeoFetchInProgress = false;
+        if (!data || !data.ok) return;
+        mGeoSummary = data;
+        renderMobileScoreboard();
+      })
+      .catch(err => {
+        mGeoFetchInProgress = false;
+        console.warn("Falha no geo-summary mobile:", err);
+      });
+  }
+
+  // ========================================================
   // 10. Inicialização
   // ========================================================
   syncCargoUI();
   updateUfDisplay();
   fetchSnapshot();
+  fetchGeoSummaryMobile();
   startSSE();
 });

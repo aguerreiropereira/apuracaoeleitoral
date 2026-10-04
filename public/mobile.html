@@ -154,6 +154,39 @@
       </div>
     </section>
 
+    <!-- Card do Placar dos 2 Líderes Nacionais (Presidente) -->
+    <section class="m-card m-scoreboard-card" id="mScoreboardCard" style="display: none;">
+      <div class="m-sb-header">
+        <span class="m-sb-title">Disputa Nacional por Estados</span>
+        <span class="m-sb-sub">27 Unidades Federativas</span>
+      </div>
+      <div class="m-sb-leaders">
+        <div class="m-sb-item left">
+          <span class="m-sb-dot" id="mSbDot1" style="background:#1f4fbf;"></span>
+          <div class="m-sb-meta">
+            <strong id="mSbName1">LÍDER 1</strong>
+            <span class="m-sb-count" id="mSbCount1">0 estados</span>
+          </div>
+        </div>
+        <span class="m-sb-vs">VS</span>
+        <div class="m-sb-item right">
+          <div class="m-sb-meta right">
+            <strong id="mSbName2">LÍDER 2</strong>
+            <span class="m-sb-count" id="mSbCount2">0 estados</span>
+          </div>
+          <span class="m-sb-dot" id="mSbDot2" style="background:#c8202f;"></span>
+        </div>
+      </div>
+      <div class="m-sb-bar-wrap">
+        <div class="m-sb-bar-fill" id="mSbBar1" style="width:50%; background:#1f4fbf;"></div>
+        <div class="m-sb-bar-fill" id="mSbBar2" style="width:50%; background:#c8202f;"></div>
+      </div>
+      <button class="m-btn-view-regions" id="mBtnOpenRegions">
+        <span class="material-symbols-outlined" style="font-size:18px;">public</span>
+        Ver Apuração por Região e Estado
+      </button>
+    </section>
+
     <!-- Barra de Pesquisa de Candidatos (Especial para Deputados) -->
     <div class="m-search-box">
       <div class="m-search-input-wrap">
@@ -305,6 +338,41 @@
             <!-- Renderizado dinamicamente -->
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- Drawer de Apuração por Região e Estado Mobile            -->
+  <!-- ======================================================== -->
+  <div class="m-drawer-overlay" id="mRegionsDrawerOverlay" style="display:none;">
+    <div class="m-drawer-sheet" id="mRegionsDrawerSheet">
+      <div class="m-drawer-handle"></div>
+      <div class="m-drawer-header">
+        <div>
+          <span class="m-cand-detail-sub">Apuração Territorial</span>
+          <h3 style="margin:0; font-size:16px;">Regiões e Estados</h3>
+        </div>
+        <button id="mBtnCloseRegionsDrawer" class="m-drawer-close" title="Fechar">
+          <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+        </button>
+      </div>
+
+      <!-- Abas da Drawer Mobile -->
+      <div class="sidebar-tabs" style="margin: 0 16px 12px;">
+        <button class="sidebar-tab active" id="mTabBtnRegs">
+          <span class="material-symbols-outlined" style="font-size:16px;">public</span>
+          Regiões (5)
+        </button>
+        <button class="sidebar-tab" id="mTabBtnUfs">
+          <span class="material-symbols-outlined" style="font-size:16px;">map</span>
+          Estados (27)
+        </button>
+      </div>
+
+      <div id="mRegionsContentWrap" style="overflow-y:auto; max-height:calc(85vh - 120px); padding:0 16px 20px;">
+        <div id="mRegionsList" class="regions-feed"></div>
+        <div id="mStatesList" class="states-feed" style="display:none;"></div>
       </div>
     </div>
   </div>

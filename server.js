@@ -10,6 +10,7 @@ const url = require("node:url");
 
 const ElectionAggregator = require("./src/aggregator");
 const CandidateService = require("./src/candidate-service");
+const GeoService = require("./src/geo-service");
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, "public");
@@ -17,6 +18,7 @@ const PUBLIC_DIR = path.join(__dirname, "public");
 const aggregator = new ElectionAggregator();
 aggregator.startBackgroundPoller();
 const candidateService = new CandidateService(aggregator);
+const geoService = new GeoService(aggregator);
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -67,6 +69,22 @@ const server = http.createServer(async (req, res) => {
   if (pathname === "/api/candidate-performance") {
     try {
       const data = await candidateService.getPerformance(parsedUrl.query);
+      res.writeHead(200, {
+        "Content-Type": "application/json; charset=utf-8",
+        "Cache-Control": "no-store, no-cache, must-revalidate"
+      });
+      res.end(JSON.stringify(data));
+    } catch (err) {
+      res.writeHead(500, { "Content-Type": "application/json" });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  // 1c. Endpoint de Resumo Geográfico (Regiões e Estados): /api/geo-summary
+  if (pathname === "/api/geo-summary") {
+    try {
+      const data = await geoService.getSummary(parsedUrl.query);
       res.writeHead(200, {
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": "no-store, no-cache, must-revalidate"

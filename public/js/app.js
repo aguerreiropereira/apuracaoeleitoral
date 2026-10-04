@@ -59,6 +59,33 @@ document.addEventListener("DOMContentLoaded", () => {
   const countdownTimer = document.getElementById("countdownTimer");
   const syncStatusText = document.getElementById("syncStatusText");
 
+  // Placar do Mapa e Sidebar Geográfica
+  const mapScoreboard = document.getElementById("mapScoreboard");
+  const sbDot1 = document.getElementById("sbDot1");
+  const sbName1 = document.getElementById("sbName1");
+  const sbStates1 = document.getElementById("sbStates1");
+  const sbBar1 = document.getElementById("sbBar1");
+  const sbDot2 = document.getElementById("sbDot2");
+  const sbName2 = document.getElementById("sbName2");
+  const sbStates2 = document.getElementById("sbStates2");
+  const sbBar2 = document.getElementById("sbBar2");
+  const legDot1 = document.getElementById("legDot1");
+  const legName1 = document.getElementById("legName1");
+  const legDot2 = document.getElementById("legDot2");
+  const legName2 = document.getElementById("legName2");
+
+  const sidebarTabs = document.getElementById("sidebarTabs");
+  const tabBtnRegions = document.getElementById("tabBtnRegions");
+  const tabBtnStates = document.getElementById("tabBtnStates");
+  const tabContentRegions = document.getElementById("tabContentRegions");
+  const tabContentStates = document.getElementById("tabContentStates");
+  const regionsFeed = document.getElementById("regionsFeed");
+  const statesFeed = document.getElementById("statesFeed");
+  const sidebarStateSearch = document.getElementById("sidebarStateSearch");
+
+  let geoSummary = null;
+  let statesSearchQuery = "";
+
   // Gestão de Tema Claro / Escuro (Padrão: Claro com Fundo Branco)
   let currentTheme = localStorage.getItem("painel_eleitoral_theme") || "light";
 
@@ -120,20 +147,28 @@ document.addEventListener("DOMContentLoaded", () => {
     window.location.href = url.toString();
   });
 
-  function updateMapThemeColors() {
+  function updateMapColors() {
     if (!svgMap) return;
     const isLight = (currentTheme === "light");
     const defaultFill = isLight ? "#cbd5e1" : "#0d2636";
 
     document.querySelectorAll(".uf").forEach(path => {
       const uf = path.dataset?.uf;
-      const ufData = currentSnapshot?.states?.[uf];
-      if (ufData && ufData.pctSections >= 0.01 && ufData.leader?.color) {
-        path.style.fill = ufData.leader.color;
+      const ufGeo = geoSummary?.states?.[uf];
+      const ufSnap = currentSnapshot?.states?.[uf];
+
+      if (ufGeo && ufGeo.leader && ufGeo.secPctNum > 0) {
+        path.style.fill = ufGeo.leader.cor || "#1f4fbf";
+      } else if (ufSnap && ufSnap.leader && ufSnap.pctSections >= 0.01) {
+        path.style.fill = ufSnap.leader.color || "#1f4fbf";
       } else {
         path.style.fill = defaultFill;
       }
     });
+  }
+
+  function updateMapThemeColors() {
+    updateMapColors();
   }
 
   // 1. Inicialização do Mapa SVG
@@ -203,43 +238,78 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function handleMapMouseMove(e) {
     const uf = e.target.dataset?.uf;
-    if (!uf || !currentSnapshot) {
+    if (!uf) {
       tooltip.hidden = true;
       return;
     }
 
     const mapData = (typeof MAP !== 'undefined') ? MAP : window.MAP;
     const stateMeta = mapData?.s?.[uf] || { n: uf };
-    const ufData = currentSnapshot.states?.[uf];
+    const ufGeo = geoSummary?.states?.[uf];
+    const ufSnap = currentSnapshot?.states?.[uf];
     const mapRect = svgMap.getBoundingClientRect();
 
     let html = `<h4>${stateMeta.n} (${uf})</h4>`;
-    if (ufData && ufData.pctSections > 0 && ufData.leader) {
+    if (ufGeo && ufGeo.secPctNum > 0 && ufGeo.leader) {
       html += `
-        <div class="row"><span>Seções Totalizadas:</span><span class="val">${ufData.pctSectionsDisplay || "0,00"}%</span></div>
+        <div class="row"><span>Região:</span><span class="val">${ufGeo.region}</span></div>
+        <div class="row"><span>Seções Totalizadas:</span><span class="val">${ufGeo.secPct}%</span></div>
+      `;
+      html += `
+        <div class="row" style="margin-top:5px;">
+          <span style="display:flex; align-items:center; gap:4px;">
+            <i style="width:8px; height:8px; border-radius:50%; background:${ufGeo.leader.cor || '#1f4fbf'}; display:inline-block;"></i>
+            <strong>1º ${ufGeo.leader.nm} (${ufGeo.leader.sg})</strong>
+          </span>
+          <span class="val" style="color:${ufGeo.leader.cor || 'var(--text-main)'}; font-weight:800;">${ufGeo.leader.pvap}%</span>
+        </div>
+        <div class="row" style="font-size:11px; color:var(--text-muted);">
+          <span>Votos:</span>
+          <span>${Number(ufGeo.leader.vap).toLocaleString("pt-BR")}</span>
+        </div>
+      `;
+      if (ufGeo.runnerUp) {
+        html += `
+          <div class="row" style="margin-top:4px;">
+            <span style="display:flex; align-items:center; gap:4px;">
+              <i style="width:8px; height:8px; border-radius:50%; background:${ufGeo.runnerUp.cor || '#c8202f'}; display:inline-block;"></i>
+              <strong>2º ${ufGeo.runnerUp.nm} (${ufGeo.runnerUp.sg})</strong>
+            </span>
+            <span class="val" style="color:${ufGeo.runnerUp.cor || 'var(--text-main)'}; font-weight:800;">${ufGeo.runnerUp.pvap}%</span>
+          </div>
+          <div class="row" style="font-size:11px; color:var(--text-muted);">
+            <span>Votos:</span>
+            <span>${Number(ufGeo.runnerUp.vap).toLocaleString("pt-BR")}</span>
+          </div>
+        `;
+      }
+      html += `<div class="row" style="color:var(--pct-color); font-size:11px; margin-top:6px;"><span>Clique para filtrar este estado</span></div>`;
+    } else if (ufSnap && ufSnap.pctSections > 0 && ufSnap.leader) {
+      html += `
+        <div class="row"><span>Seções Totalizadas:</span><span class="val">${ufSnap.pctSectionsDisplay || "0,00"}%</span></div>
       `;
       html += `
         <div class="row" style="margin-top:4px;">
           <span>Líder:</span>
-          <span class="val" style="color:${ufData.leader.color || '#fff'}">${ufData.leader.name} (${ufData.leader.party})</span>
+          <span class="val" style="color:${ufSnap.leader.color || '#fff'}">${ufSnap.leader.name} (${ufSnap.leader.party})</span>
         </div>
         <div class="row">
           <span>Votação:</span>
-          <span class="val">${Number(ufData.leader.votes).toLocaleString("pt-BR")} (${ufData.leader.pct}%)</span>
+          <span class="val">${Number(ufSnap.leader.votes).toLocaleString("pt-BR")} (${ufSnap.leader.pct}%)</span>
         </div>
       `;
-      if (ufData.runnerUp) {
+      if (ufSnap.runnerUp) {
         html += `
           <div class="row" style="opacity:0.85; margin-top:2px;">
             <span>2º colocado:</span>
-            <span class="val">${ufData.runnerUp.name} (${ufData.runnerUp.pct}%)</span>
+            <span class="val">${ufSnap.runnerUp.name} (${ufSnap.runnerUp.pct}%)</span>
           </div>
         `;
       }
     } else {
       html += `
-        <div class="row" style="color:#94a3b8; font-size:12px;"><span>Aguardando início da apuração (17h).</span></div>
-        <div class="row" style="color:#60a5fa; font-size:11px; margin-top:6px;"><span>Clique para filtrar este estado.</span></div>
+        <div class="row" style="color:#94a3b8; font-size:12px;"><span>Aguardando início da apuração.</span></div>
+        <div class="row" style="color:var(--pct-color); font-size:11px; margin-top:6px;"><span>Clique para filtrar este estado.</span></div>
       `;
     }
 
@@ -311,25 +381,9 @@ document.addEventListener("DOMContentLoaded", () => {
     currentSnapshot = snapshot;
     nextRefreshTime = snapshot.nextRefreshAt || (Date.now() + 20000);
 
-    // Colorir estados do mapa
-    const isLight = (currentTheme === "light");
-    const defaultFill = isLight ? "#cbd5e1" : "#0d2636";
-
-    if (snapshot.states && Object.keys(snapshot.states).length > 0) {
-      Object.keys(snapshot.states).forEach(uf => {
-        const ufData = snapshot.states[uf];
-        const path = document.getElementById(`uf-${uf}`);
-        if (!path) return;
-
-        if (!ufData.leader || ufData.pctSections < 0.01) {
-          path.style.fill = defaultFill;
-        } else {
-          path.style.fill = ufData.leader.color || "#1f4fbf";
-        }
-      });
-    }
-
+    updateMapColors();
     renderDashboard();
+    fetchGeoSummary();
   }
 
   function renderDashboard() {
@@ -737,6 +791,223 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // ========================================================
+  // 2.2 Placar de Líderes e Sidebar Geográfica (Regiões e Estados)
+  // ========================================================
+  function renderMapScoreboard() {
+    if (!geoSummary || !geoSummary.topTwo || geoSummary.topTwo.length < 2) return;
+    const c1 = geoSummary.topTwo[0];
+    const c2 = geoSummary.topTwo[1];
+
+    if (sbDot1) sbDot1.style.background = c1.cor || "#1f4fbf";
+    if (sbName1) sbName1.textContent = `${c1.nm} (${c1.sg})`;
+    if (sbStates1) sbStates1.textContent = `${c1.statesCount} ${c1.statesCount === 1 ? 'estado' : 'estados'}`;
+
+    if (sbDot2) sbDot2.style.background = c2.cor || "#c8202f";
+    if (sbName2) sbName2.textContent = `${c2.nm} (${c2.sg})`;
+    if (sbStates2) sbStates2.textContent = `${c2.statesCount} ${c2.statesCount === 1 ? 'estado' : 'estados'}`;
+
+    const totalWon = (c1.statesCount + c2.statesCount) || 1;
+    const pct1 = Math.round((c1.statesCount / totalWon) * 100);
+    const pct2 = 100 - pct1;
+
+    if (sbBar1) {
+      sbBar1.style.width = `${pct1}%`;
+      sbBar1.style.background = c1.cor || "#1f4fbf";
+    }
+    if (sbBar2) {
+      sbBar2.style.width = `${pct2}%`;
+      sbBar2.style.background = c2.cor || "#c8202f";
+    }
+
+    // Atualiza Legenda do Mapa
+    if (legDot1) legDot1.style.background = c1.cor || "#1f4fbf";
+    if (legName1) legName1.textContent = `${c1.nm} (${c1.sg})`;
+    if (legDot2) legDot2.style.background = c2.cor || "#c8202f";
+    if (legName2) legName2.textContent = `${c2.nm} (${c2.sg})`;
+  }
+
+  function renderRegionsFeed() {
+    if (!regionsFeed || !geoSummary?.regions) return;
+
+    regionsFeed.innerHTML = geoSummary.regions.map(r => {
+      const c1 = r.leader;
+      const c2 = r.runnerUp;
+
+      const c1Html = c1 ? `
+        <div class="region-cand-item">
+          <div class="region-cand-left">
+            <span class="region-cand-dot" style="background: ${c1.cor || '#1f4fbf'};"></span>
+            <span class="region-cand-name">1º ${c1.nm} (${c1.sg})</span>
+          </div>
+          <span class="region-cand-pct">${c1.pvap}%</span>
+        </div>
+      ` : `<div style="font-size:11px; color:var(--text-dim)">Sem apuração</div>`;
+
+      const c2Html = c2 ? `
+        <div class="region-cand-item">
+          <div class="region-cand-left">
+            <span class="region-cand-dot" style="background: ${c2.cor || '#c8202f'};"></span>
+            <span class="region-cand-name">2º ${c2.nm} (${c2.sg})</span>
+          </div>
+          <span class="region-cand-pct">${c2.pvap}%</span>
+        </div>
+      ` : "";
+
+      const chipsHtml = (r.ufs || []).map(uf => {
+        const ufState = geoSummary.states?.[uf];
+        const dotColor = ufState?.leader?.cor || '#94a3b8';
+        const isCurrent = (selectedUf === uf);
+        return `
+          <button class="state-chip ${isCurrent ? 'selected' : ''}" data-uf="${uf}" title="${ufState?.name || uf} (${ufState?.secPct || 0}%)">
+            <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:${dotColor}; margin-right:3px;"></span>${uf}
+          </button>
+        `;
+      }).join("");
+
+      return `
+        <div class="region-card">
+          <div class="region-head">
+            <span class="region-name">Região ${r.region}</span>
+            <span class="region-sec-pct">${r.pctSections}% apurado</span>
+          </div>
+          <div class="region-bar-bg">
+            <div class="region-bar-fill" style="width: ${r.pctSectionsNum}%;"></div>
+          </div>
+          <div class="region-candidates-row">
+            ${c1Html}
+            ${c2Html}
+          </div>
+          <div class="region-states-chips">
+            ${chipsHtml}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    regionsFeed.querySelectorAll(".state-chip").forEach(chip => {
+      chip.addEventListener("click", () => {
+        const uf = chip.dataset.uf;
+        selectStateFromSidebar(uf);
+      });
+    });
+  }
+
+  function renderStatesFeed() {
+    if (!statesFeed || !geoSummary?.statesList) return;
+
+    let list = [...geoSummary.statesList];
+    if (statesSearchQuery.trim()) {
+      const q = statesSearchQuery.trim().toLowerCase();
+      list = list.filter(s => s.name.toLowerCase().includes(q) || s.uf.toLowerCase().includes(q) || s.region.toLowerCase().includes(q));
+    }
+
+    list.sort((a, b) => b.secPctNum - a.secPctNum);
+
+    if (list.length === 0) {
+      statesFeed.innerHTML = `<div style="text-align:center; padding:16px; color:var(--text-muted); font-size:12px;">Nenhum estado encontrado.</div>`;
+      return;
+    }
+
+    statesFeed.innerHTML = list.map(s => {
+      const isSelected = (selectedUf === s.uf);
+      const dotColor = s.leader?.cor || "#94a3b8";
+      const leaderName = s.leader ? `${s.leader.nm} (${s.leader.sg})` : "Aguardando";
+      const leaderPct = s.leader ? `${s.leader.pvap}%` : "0,00%";
+
+      return `
+        <div class="state-item-row ${isSelected ? 'selected' : ''}" data-uf="${s.uf}">
+          <div class="state-item-left">
+            <span class="state-item-badge" style="background:${dotColor}">${s.uf}</span>
+            <div>
+              <div class="state-item-name">${s.name}</div>
+              <div class="state-item-sec">${s.region} · ${s.secPct}% apurado</div>
+            </div>
+          </div>
+          <div class="state-item-right">
+            <div>
+              <div style="font-size:11px; font-weight:700; color:var(--text-main); display:flex; align-items:center; justify-content:flex-end; gap:4px;">
+                <span class="state-item-leader-dot" style="background:${dotColor}"></span>
+                ${leaderName}
+              </div>
+              <div class="state-item-leader-pct" style="color:${dotColor}">${leaderPct}</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    statesFeed.querySelectorAll(".state-item-row").forEach(row => {
+      row.addEventListener("click", () => {
+        const uf = row.dataset.uf;
+        selectStateFromSidebar(uf);
+      });
+    });
+  }
+
+  function selectStateFromSidebar(uf) {
+    if (selectedUf === uf) {
+      if (selectedCargo === "1") {
+        selectedUf = "";
+      }
+    } else {
+      selectedUf = uf;
+    }
+    if (ufSelect) ufSelect.value = selectedUf;
+    syncMapSelection();
+    startRealtimeConnection();
+    renderRegionsFeed();
+    renderStatesFeed();
+  }
+
+  // Abas da Sidebar
+  if (sidebarTabs) {
+    sidebarTabs.querySelectorAll(".sidebar-tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        sidebarTabs.querySelectorAll(".sidebar-tab").forEach(t => t.classList.remove("active"));
+        tab.classList.add("active");
+        const target = tab.dataset.tab;
+        if (target === "regions") {
+          tabContentRegions.style.display = "flex";
+          tabContentStates.style.display = "none";
+        } else {
+          tabContentRegions.style.display = "none";
+          tabContentStates.style.display = "flex";
+          renderStatesFeed();
+        }
+      });
+    });
+  }
+
+  if (sidebarStateSearch) {
+    sidebarStateSearch.addEventListener("input", (e) => {
+      statesSearchQuery = e.target.value;
+      renderStatesFeed();
+    });
+  }
+
+  let geoFetchInProgress = false;
+  function fetchGeoSummary() {
+    if (geoFetchInProgress) return;
+    geoFetchInProgress = true;
+    const url = `/api/geo-summary${isFakeMode ? '?mode=fake' : ''}`;
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        geoFetchInProgress = false;
+        if (!data || !data.ok) return;
+        geoSummary = data;
+        renderMapScoreboard();
+        updateMapColors();
+        renderRegionsFeed();
+        renderStatesFeed();
+      })
+      .catch(err => {
+        geoFetchInProgress = false;
+        console.warn("Erro ao buscar geo-summary:", err);
+      });
+  }
+
   // 3. Conexões com API e Streaming SSE
   function startRealtimeConnection() {
     if (eventSource) {
@@ -804,4 +1075,5 @@ document.addEventListener("DOMContentLoaded", () => {
   // Inicialização
   initSvgMap();
   startRealtimeConnection();
+  fetchGeoSummary();
 });
