@@ -1,0 +1,23 @@
+{
+  "name": "painel-apuracao-tse",
+  "version": "1.0.0",
+  "description": "Painel em tempo real de apuração das eleições do Brasil consumindo dados oficiais do TSE com mapa interativo SVG",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "tse",
+    "eleicoes",
+    "apuracao",
+    "brasil",
+    "dashboard",
+    "svg-map",
+    "realtime",
+    "sse"
+  ],
+  "author": "Antigravity Pair Programmer",
+  "license": "MIT"
+}

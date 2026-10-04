@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resultados da Apuração · Eleições Gerais 2026</title>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Faixa com as Cores Nacionais do Brasil -->
+  <div class="brazil-ribbon"></div>
+
+  <!-- Topo Institucional Estilo TSE com Identidade Nacional -->
+  <header class="tse-topbar">
+    <div class="topbar-content">
+      <div class="tse-brand">
+        <!-- Bandeira Nacional do Brasil Oficial em SVG -->
+        <div class="brazil-flag-wrap" title="Bandeira do Brasil">
+          <svg viewBox="0 0 28 20" width="34" height="24" class="flag-icon" role="img" aria-label="Bandeira Nacional do Brasil">
+            <rect width="28" height="20" rx="2" fill="#009739"/>
+            <polygon points="14,2.2 25.5,10 14,17.8 2.5,10" fill="#fed100"/>
+            <circle cx="14" cy="10" r="4.4" fill="#002776"/>
+            <path d="M9.8 11.2 C11.5 9.8 16.5 9.8 18.2 11.2" stroke="#ffffff" stroke-width="0.8" fill="none"/>
+          </svg>
+        </div>
+        <div>
+          <div class="tse-title">REPÚBLICA FEDERATIVA DO BRASIL</div>
+          <div class="tse-subtitle">Justiça Eleitoral · Divulgação Oficial de Resultados 2026</div>
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Botão Alternador de Tema Claro / Escuro -->
+        <button id="btnToggleTheme" class="btn btn-sm btn-theme" title="Alternar entre Fundo Branco (Claro) e Fundo Escuro">
+          <svg id="themeIconSun" class="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="display:none;">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg id="themeIconMoon" class="theme-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15" style="display:inline-block;">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <span id="themeBtnText">Fundo Escuro</span>
+        </button>
+
+        <span id="modeBadge" class="badge-pill sim">Modo Simulação</span>
+        <button id="btnToggleMode" class="btn btn-sm btn-outline">Mudar para Oficial TSE</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filtro de Eleição e Cargo -->
+  <nav class="election-nav">
+    <div class="nav-content">
+      <div class="election-title-box">
+        <span class="election-label">ELEIÇÃO</span>
+        <h2 id="electionHeading">Eleição Geral Federal 2026 - 1º Turno (Pleito 6257)</h2>
+      </div>
+
+      <div class="nav-controls">
+        <!-- Seletor de Cargo -->
+        <div class="cargo-tabs" id="cargoTabs">
+          <button class="cargo-tab active" data-cargo="1">Presidente</button>
+          <button class="cargo-tab" data-cargo="3">Governador</button>
+          <button class="cargo-tab" data-cargo="5">Senador</button>
+        </div>
+
+        <!-- Seletor de Estado / Abrangência -->
+        <div class="uf-selector-box">
+          <label for="ufSelect">Abrangência:</label>
+          <select id="ufSelect" class="form-select">
+            <option value="">Brasil (Total Nacional)</option>
+            <option value="AC">Acre (AC)</option>
+            <option value="AL">Alagoas (AL)</option>
+            <option value="AP">Amapá (AP)</option>
+            <option value="AM">Amazonas (AM)</option>
+            <option value="BA">Bahia (BA)</option>
+            <option value="CE">Ceará (CE)</option>
+            <option value="DF">Distrito Federal (DF)</option>
+            <option value="ES">Espírito Santo (ES)</option>
+            <option value="GO">Goiás (GO)</option>
+            <option value="MA">Maranhão (MA)</option>
+            <option value="MT">Mato Grosso (MT)</option>
+            <option value="MS">Mato Grosso do Sul (MS)</option>
+            <option value="MG">Minas Gerais (MG)</option>
+            <option value="PA">Pará (PA)</option>
+            <option value="PB">Paraíba (PB)</option>
+            <option value="PR">Paraná (PR)</option>
+            <option value="PE">Pernambuco (PE)</option>
+            <option value="PI">Piauí (PI)</option>
+            <option value="RJ">Rio de Janeiro (RJ)</option>
+            <option value="RN">Rio Grande do Norte (RN)</option>
+            <option value="RS">Rio Grande do Sul (RS)</option>
+            <option value="RO">Rondônia (RO)</option>
+            <option value="RR">Roraima (RR)</option>
+            <option value="SC">Santa Catarina (SC)</option>
+            <option value="SP">São Paulo (SP)</option>
+            <option value="SE">Sergipe (SE)</option>
+            <option value="TO">Tocantins (TO)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="main-container">
+
+    <!-- Banner Informativo Pré-Apuração -->
+    <div class="pre-apuration-notice" id="preApurationBanner" style="display: none;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="12" y1="8" x2="12" y2="12"></line>
+        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+      </svg>
+      <div>
+        <strong>A apuração oficial do TSE inicia às 17h (Horário de Brasília).</strong>
+        <span id="preApurationDesc">Exibindo as candidaturas oficiais registradas no TSE para a região selecionada. Os votos encontram-se zerados até o encerramento da votação.</span>
+      </div>
+    </div>
+
+    <!-- Card Resumo da Apuração Oficial (Totalização) -->
+    <section class="summary-card">
+      <div class="summary-header">
+        <div class="summary-status">
+          <span class="status-indicator"></span>
+          <strong id="apurationStatusText">Apuração em Andamento</strong>
+          <span class="text-muted" id="currentViewScope">· Brasil</span>
+        </div>
+        <div class="summary-timestamp">
+          Última atualização: <strong id="lastUpdateText">--:--:--</strong>
+        </div>
+      </div>
+
+      <!-- Barra Principal de Seções Totalizadas -->
+      <div class="progress-section">
+        <div class="progress-labels">
+          <span class="progress-pct"><strong id="totalSecPct">0,00%</strong> de seções totalizadas</span>
+          <span class="progress-count" id="sectionsCountDisplay">0 de 472.075 seções</span>
+        </div>
+        <div class="tse-progress-track">
+          <div class="tse-progress-fill" id="totalSecBar" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Métricas em Grade (Votos Válidos, Nulos, Brancos, Comparecimento) -->
+      <div class="metrics-grid">
+        <div class="metric-item">
+          <span class="metric-label">Votos Válidos</span>
+          <span class="metric-val" id="metricValid">0</span>
+          <span class="metric-sub" id="metricValidPct">0,00%</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Votos em Branco</span>
+          <span class="metric-val" id="metricBlank">0</span>
+          <span class="metric-sub" id="metricBlankPct">0,00%</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Votos Nulos</span>
+          <span class="metric-val" id="metricNull">0</span>
+          <span class="metric-sub" id="metricNullPct">0,00%</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">Abstenções</span>
+          <span class="metric-val" id="metricAbst">0</span>
+          <span class="metric-sub" id="metricAbstPct">0,00%</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Grade Principal: Mapa Interativo e Lista Oficial de Candidatos -->
+    <main class="content-grid">
+
+      <!-- Coluna da Esquerda: Mapa Interativo do Brasil em SVG -->
+      <section class="panel-card map-panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title">Mapa de Apuração por Estado</h3>
+            <p class="panel-desc">Clique no estado para filtrar a apuração detalhada</p>
+          </div>
+          <button id="btnResetMap" class="btn btn-sm btn-ghost" hidden>Ver Brasil Inteiro</button>
+        </div>
+
+        <div class="map-viewport">
+          <svg id="brazilMap" viewBox="0 0 1000 1000" role="img" aria-label="Mapa da apuração eleitoral do Brasil"></svg>
+          <div id="mapTooltip" class="tse-tooltip" hidden></div>
+        </div>
+
+        <!-- Legenda dos Candidatos Líderes no Mapa -->
+        <div class="map-legend" id="mapLegend">
+          <span class="legend-item"><i style="background: #c8202f"></i> LULA (PT)</span>
+          <span class="legend-item"><i style="background: #1f4fbf"></i> BOLSONARO (PL)</span>
+          <span class="legend-item"><i style="background: #334155"></i> Sem apuração</span>
+        </div>
+      </section>
+
+      <!-- Coluna da Direita: Lista Oficial dos Candidatos -->
+      <section class="panel-card results-panel">
+        <div class="panel-header">
+          <div>
+            <h3 class="panel-title" id="resultsTitle">Classificação dos Candidatos</h3>
+            <p class="panel-desc" id="resultsSubtitle">Presidente da República · Total Nacional</p>
+          </div>
+        </div>
+
+        <!-- Lista de Cards dos Candidatos -->
+        <div class="candidates-container" id="candidatesContainer">
+          <div class="loading-state">
+            <div class="spinner"></div>
+            <span>Carregando dados da totalização...</span>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="tse-footer">
+      <div class="footer-left">
+        <span class="sync-status">
+          <i class="sync-dot"></i>
+          <span id="syncStatusText">Conectado ao servidor de apuração</span>
+        </span>
+      </div>
+      <div class="footer-center">
+        <span>Próxima atualização automática em: <strong id="countdownTimer">00:20</strong></span>
+      </div>
+      <div class="footer-right">
+        <span>Fonte: <a href="https://resultados.tse.jus.br" target="_blank" rel="noopener">TSE · Tribunal Superior Eleitoral</a></span>
+      </div>
+    </footer>
+
+  </div>
+
+  <!-- Modal de Desempenho Detalhado do Candidato (Estados / Cidades) -->
+  <div id="candidateModal" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="modalCandName">
+    <div class="modal-dialog">
+      <!-- Fita Nacional Verde, Amarela e Azul no Topo do Modal -->
+      <div class="modal-ribbon"></div>
+
+      <button id="btnCloseModal" class="btn-close-modal" aria-label="Fechar">&times;</button>
+
+      <div id="modalLoading" class="loading-state" style="padding: 60px 20px;">
+        <div class="spinner"></div>
+        <span>Carregando dados de desempenho do candidato...</span>
+      </div>
+
+      <div id="modalContent" style="display: none;">
+        <!-- Cabeçalho Oficial do Candidato -->
+        <div class="modal-cand-header">
+          <div class="modal-avatar-box">
+            <img id="modalCandFoto" src="" alt="Foto Candidato" class="modal-avatar-img" onerror="this.style.display='none'">
+            <span id="modalCandNumero" class="modal-avatar-num">--</span>
+          </div>
+          <div class="modal-cand-info">
+            <div class="modal-title-row">
+              <h3 id="modalCandName">Nome Candidato</h3>
+              <span id="modalCandBadge" class="cand-badge-status">Status</span>
+            </div>
+            <div class="modal-party-row">
+              <strong id="modalCandParty">PARTIDO</strong> · <span id="modalCandColig">Coligação</span>
+            </div>
+            <div class="modal-vice-row" id="modalCandViceRow">
+              <span id="modalCandVice">Vice / Suplente</span>
+            </div>
+            <div class="modal-scope-tag" id="modalScopeTag">
+              Presidente · Desempenho por Estados e Capitais
+            </div>
+          </div>
+          <div class="modal-total-box">
+            <div class="modal-pct" id="modalCandPct">0,00%</div>
+            <div class="modal-votes" id="modalCandVotes">0 votos válidos</div>
+          </div>
+        </div>
+
+        <!-- Cards de Métricas Resumo -->
+        <div class="modal-metrics-grid">
+          <div class="modal-metric-card">
+            <span class="m-label">Melhor Desempenho</span>
+            <strong class="m-val" id="modalBestRegion">-</strong>
+          </div>
+          <div class="modal-metric-card" id="modalCapitalCard">
+            <span class="m-label">Votação na Capital</span>
+            <strong class="m-val" id="modalCapitalVotes">-</strong>
+          </div>
+          <div class="modal-metric-card" id="modalRatioCard">
+            <span class="m-label">Capital vs Interior</span>
+            <div class="m-ratio-bar">
+              <div id="modalCapitalBar" class="m-bar-cap" style="width: 50%" title="Capital"></div>
+              <div id="modalInteriorBar" class="m-bar-int" style="width: 50%" title="Interior"></div>
+            </div>
+            <span class="m-ratio-labels" id="modalRatioLabels">Capital: 50% · Interior: 50%</span>
+          </div>
+        </div>
+
+        <!-- Barra de Ações: Busca e Ordenação -->
+        <div class="modal-table-controls">
+          <div class="modal-search-box">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="modalSearchInput" placeholder="Filtrar estado ou cidade..." class="modal-search-input">
+          </div>
+          <div class="modal-sort-tabs" id="modalSortTabs">
+            <button class="sort-tab active" data-sort="pct">Maior %</button>
+            <button class="sort-tab" data-sort="votes">Mais Votos</button>
+            <button class="sort-tab" data-sort="alpha">Alfabética</button>
+          </div>
+        </div>
+
+        <!-- Tabela de Desempenho Detalhado -->
+        <div class="modal-table-wrapper">
+          <table class="modal-table" id="modalTable">
+            <thead id="modalTableHead">
+              <!-- Cabeçalhos dinâmicos inseridos via JS -->
+            </thead>
+            <tbody id="modalTableBody">
+              <!-- Linhas dinâmicas inseridas via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/js/map-data.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
