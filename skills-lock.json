@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "antigravity-design-expert": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "skillPath": "skills/antigravity-design-expert/SKILL.md",
+      "computedHash": "fdbd35507e9a3b909a32c32e244d5a11802064b55c8fbd5a43251016e67fc6d1"
+    }
+  }
+}

@@ -4,6 +4,7 @@
  */
 
 const { UFS, UF_NAMES } = require("../data/mock-data");
+const { getHistoricalDataset } = require("./historical-data");
 
 const REGIONS = {
   "Norte": ["AC", "AP", "AM", "PA", "RO", "RR", "TO"],
@@ -32,8 +33,20 @@ class GeoService {
   async getSummary(params = {}) {
     const isFake = params.mode === "fake" || params.fake === "true";
     const now = Date.now();
+    const options = {
+      ano: params.ano || "2026",
+      pleitoFed: params.pleitoFed || params.pleito || "6257",
+      pleitoEst: params.pleitoEst || "6259"
+    };
 
-    if (!isFake && this.cache && (now - this.lastFetch < this.ttlMs)) {
+    const hist = getHistoricalDataset(options.ano, options.pleitoFed);
+    if (hist && !isFake) {
+      return this._buildHistoricalGeoSummary(hist, options);
+    }
+
+    const cacheKey = `${options.ano}_${options.pleitoFed}_${options.pleitoEst}`;
+
+    if (!isFake && this.cache && this.cacheKey === cacheKey && (now - this.lastFetch < this.ttlMs)) {
       return this.cache;
     }
 
@@ -43,7 +56,7 @@ class GeoService {
     const stateSnaps = await Promise.all(
       UFS.map(async (uf) => {
         try {
-          const snap = await tseClient.fetchLiveSnapshot("1", uf.toLowerCase());
+          const snap = await tseClient.fetchLiveSnapshot("1", uf.toLowerCase(), options);
           const cands = snap.national?.candidates || [];
           const c1 = cands[0] || null;
           const c2 = cands[1] || null;
@@ -158,10 +171,105 @@ class GeoService {
 
     if (!isFake) {
       this.cache = result;
+      this.cacheKey = cacheKey;
       this.lastFetch = now;
     }
 
     return result;
+  }
+
+  _buildHistoricalGeoSummary(hist, options) {
+    const states = {};
+    const statesList = [];
+    const leaderCounts = {};
+    const candsMap = {};
+
+    (hist.presidente?.candidates || []).forEach(c => {
+      candsMap[c.n] = c;
+    });
+
+    const statesVoting = hist.presidente?.statesVoting || {};
+
+    UFS.forEach(uf => {
+      const v = statesVoting[uf];
+      const lCand = v ? candsMap[v.leader] : null;
+      const rCand = v ? candsMap[v.runner] : null;
+
+      const stateObj = {
+        uf,
+        name: UF_NAMES[uf] || uf,
+        region: UF_TO_REGION[uf] || "Outros",
+        secPct: "100,00",
+        secPctNum: 100,
+        secProcessed: 1,
+        secTotal: 1,
+        validVotes: v ? v.total : 0,
+        totalVotes: v ? v.total : 0,
+        leader: lCand ? { n: lCand.n, nm: lCand.nm, sg: lCand.sg, cor: lCand.cor, vap: v.votesLeader, pvap: v.pctLeader } : null,
+        runnerUp: rCand ? { n: rCand.n, nm: rCand.nm, sg: rCand.sg, cor: rCand.cor, vap: v.votesRunner, pvap: v.pctRunner } : null,
+        candidates: hist.presidente?.candidates || []
+      };
+
+      states[uf] = stateObj;
+      statesList.push(stateObj);
+
+      if (lCand) {
+        leaderCounts[lCand.n] = (leaderCounts[lCand.n] || 0) + 1;
+      }
+    });
+
+    // Top two nacional
+    const topTwo = (hist.presidente?.candidates || []).slice(0, 2).map(c => ({
+      n: c.n,
+      nm: c.nm,
+      sg: c.sg,
+      cor: c.cor,
+      statesCount: leaderCounts[c.n] || 0,
+      leadingStates: statesList.filter(s => s.leader && s.leader.n === c.n).map(s => s.uf)
+    }));
+
+    // Agrupamento por regiões
+    const regions = Object.entries(REGIONS).map(([regName, ufsInReg]) => {
+      const ufsData = ufsInReg.map(u => states[u]).filter(Boolean);
+      const regVotesPerCand = {};
+      let totalRegValid = 0;
+
+      ufsData.forEach(s => {
+        totalRegValid += s.validVotes || 0;
+        if (s.leader) {
+          regVotesPerCand[s.leader.n] = (regVotesPerCand[s.leader.n] || 0) + (s.leader.vap || 0);
+        }
+        if (s.runnerUp) {
+          regVotesPerCand[s.runnerUp.n] = (regVotesPerCand[s.runnerUp.n] || 0) + (s.runnerUp.vap || 0);
+        }
+      });
+
+      const sortedRegCands = Object.entries(regVotesPerCand)
+        .map(([n, vap]) => {
+          const c = candsMap[n];
+          const pvap = totalRegValid > 0 ? ((vap / totalRegValid) * 100).toFixed(2).replace(".", ",") : "0,00";
+          return { n, nm: c?.nm || n, sg: c?.sg || "", cor: c?.cor, vap, pvap };
+        })
+        .sort((a, b) => b.vap - a.vap);
+
+      return {
+        region: regName,
+        pctSections: "100,00",
+        pctSectionsNum: 100,
+        leader: sortedRegCands[0] || null,
+        runnerUp: sortedRegCands[1] || null,
+        ufs: ufsInReg
+      };
+    });
+
+    return {
+      ok: true,
+      refreshedAt: Date.now(),
+      topTwo,
+      regions,
+      states,
+      statesList
+    };
   }
 }
 

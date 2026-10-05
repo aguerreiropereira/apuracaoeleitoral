@@ -14,11 +14,11 @@ class TseClient {
   }
 
   /**
-   * Constrói a URL oficial .jws do TSE conforme cargo e UF
-   * - Cargo 1 (Presidente): Eleição 6257
-   * - Cargo 3 (Governador) e 5 (Senador): Eleição 6259
+   * Constrói a URL oficial .jws do TSE conforme cargo, UF e pleito
+   * - Cargo 1 (Presidente): Eleição Federal (Padrão 6257)
+   * - Demais cargos (Governador, Senador, Deputados): Eleição Estadual (Padrão 6259)
    */
-  buildJwsUrl(uf = "br", cargo = "1") {
+  buildJwsUrl(uf = "br", cargo = "1", options = {}) {
     let ufLower = (uf || "br").toLowerCase();
     // Cargos estaduais e proporcionais não existem no âmbito 'BR'; padroniza para 'sp' se nenhum for selecionado
     if (cargo !== "1" && (ufLower === "br" || !ufLower)) {
@@ -32,8 +32,11 @@ class TseClient {
     }
 
     const cargoCode = actualCargo.padStart(4, "0");
-    const eleicaoId = (cargo === "1") ? "6257" : "6259";
-    return `${this.baseUrl}/ele${this.ano}/${eleicaoId}/dados/${ufLower}/${ufLower}-c${cargoCode}-e00${eleicaoId}-u.jws`;
+    const ano = options.ano || this.ano || "2026";
+    const eleicaoId = (cargo === "1") 
+      ? (options.pleitoFed || options.pleito || "6257") 
+      : (options.pleitoEst || "6259");
+    return `${this.baseUrl}/ele${ano}/${eleicaoId}/dados/${ufLower}/${ufLower}-c${cargoCode}-e00${eleicaoId}-u.jws`;
   }
 
   async fetchJws(url) {
@@ -67,7 +70,7 @@ class TseClient {
     return payload;
   }
 
-  parseCandidates(cargObj, eleicaoId, ufLower, cargo) {
+  parseCandidates(cargObj, eleicaoId, ufLower, cargo, ano = "2026") {
     const candidates = [];
     const agrList = cargObj?.agr || [];
 
@@ -83,10 +86,10 @@ class TseClient {
           // Candidatos à presidência (cargo 1) sempre ficam na pasta 'br'
           const photoUf = (cargo === "1") ? "br" : ufLower;
           const photoUrl = c.sqcand 
-            ? `https://resultados.tse.jus.br/oficial/ele2026/${eleicaoId}/fotos/${photoUf}/${c.sqcand}.jpeg`
+            ? `https://resultados.tse.jus.br/oficial/ele${ano}/${eleicaoId}/fotos/${photoUf}/${c.sqcand}.jpeg`
             : null;
 
-          // Suporte ao formato oficial do TSE 2026 para vice e suplentes (campo c.vs)
+          // Suporte ao formato oficial do TSE para vice e suplentes (campo c.vs)
           const vicesList = (c.vs || c.vpos || []).map(v => {
             const role = v.tp === "v" ? "Vice" : (v.tp === "s1" ? "1º Suplente" : (v.tp === "s2" ? "2º Suplente" : ""));
             const name = v.nmu || v.nm;
@@ -119,19 +122,22 @@ class TseClient {
     return candidates;
   }
 
-  async fetchLiveSnapshot(cargo = "1", uf = "br") {
+  async fetchLiveSnapshot(cargo = "1", uf = "br", options = {}) {
     const now = Date.now();
     let ufLower = (uf || "br").toLowerCase();
     if (cargo !== "1" && (ufLower === "br" || !ufLower)) {
       ufLower = "sp";
     }
 
-    const eleicaoId = (cargo === "1") ? "6257" : "6259";
-    const jwsUrl = this.buildJwsUrl(ufLower, cargo);
+    const ano = options.ano || this.ano || "2026";
+    const eleicaoId = (cargo === "1") 
+      ? (options.pleitoFed || options.pleito || "6257") 
+      : (options.pleitoEst || "6259");
+    const jwsUrl = this.buildJwsUrl(ufLower, cargo, options);
     const data = await this.fetchJws(jwsUrl);
 
     const cargObj = data.carg?.[0] || {};
-    const candidates = this.parseCandidates(cargObj, eleicaoId, ufLower, cargo);
+    const candidates = this.parseCandidates(cargObj, eleicaoId, ufLower, cargo, ano);
 
     const s = data.s || {};
     const v = data.v || {};
@@ -168,8 +174,11 @@ class TseClient {
 
     return {
       mode: "tse",
+      ano: ano,
       eleicaoId: eleicaoId,
-      eleicaoNome: `Eleição 2026 - ${officeName} (${ufName})`,
+      pleitoFed: options.pleitoFed || options.pleito || "6257",
+      pleitoEst: options.pleitoEst || "6259",
+      eleicaoNome: `Eleição ${ano} - ${officeName} (${ufName}) [Pleito ${eleicaoId}]`,
       serverNow: now,
       refreshedAt: now,
       nextRefreshAt: now + 20000,

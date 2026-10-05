@@ -59,6 +59,11 @@
         <span id="mIconMoon" class="material-symbols-outlined" style="font-size:18px;">dark_mode</span>
       </button>
 
+      <!-- Botão Selecionar Pleito -->
+      <button id="mBtnOpenPleitoDrawer" class="m-icon-btn" title="Selecionar Pleito para Monitorar">
+        <span class="material-symbols-outlined" style="font-size:18px; color:var(--m-yellow);">how_to_vote</span>
+      </button>
+
       <!-- Botão Atualizar -->
       <button id="mBtnRefresh" class="m-icon-btn" title="Atualizar agora">
         <span id="mIconRefresh" class="material-symbols-outlined" style="font-size:18px;">sync</span>
@@ -103,7 +108,7 @@
         <div class="m-uf-info">
           <span class="m-uf-badge" id="mCurrentUfBadge">BR</span>
           <div class="m-uf-text">
-            <span class="m-uf-sub">Abrangência</span>
+            <span class="m-uf-sub" id="mPleitoSubText">Eleições 2026 · Pleito 6257</span>
             <strong id="mCurrentUfName">Brasil (Total Nacional)</strong>
           </div>
         </div>
@@ -184,6 +189,10 @@
       <button class="m-btn-view-regions" id="mBtnOpenRegions">
         <span class="material-symbols-outlined" style="font-size:18px;">public</span>
         Ver Apuração por Região e Estado
+      </button>
+      <button id="mBtnQuickEleitos" class="m-card-btn" style="margin-top:8px; border-color:var(--border-subtle); background:var(--bg-input); color:var(--text-main); font-weight:700;">
+        <span class="material-symbols-outlined" style="font-size:18px; color:var(--m-green);">how_to_reg</span>
+        Ver Quadro Geral de Eleitos
       </button>
     </section>
 
@@ -368,11 +377,100 @@
           <span class="material-symbols-outlined" style="font-size:16px;">map</span>
           Estados (27)
         </button>
+        <button class="sidebar-tab" id="mTabBtnEleitos">
+          <span class="material-symbols-outlined" style="font-size:16px; color:var(--m-yellow);">how_to_reg</span>
+          Eleitos
+        </button>
       </div>
 
       <div id="mRegionsContentWrap" style="overflow-y:auto; max-height:calc(85vh - 120px); padding:0 16px 20px;">
         <div id="mRegionsList" class="regions-feed"></div>
         <div id="mStatesList" class="states-feed" style="display:none;"></div>
+        <div id="mEleitosWrap" style="display:none; flex-direction:column; gap:10px;">
+          <div class="elected-pills" id="mElectedOfficePills" style="display:flex; gap:6px; overflow-x:auto; padding-bottom:6px;">
+            <button class="elected-pill active" data-office="all">Todos</button>
+            <button class="elected-pill" data-office="pres">Pres.</button>
+            <button class="elected-pill" data-office="gov">Gov.</button>
+            <button class="elected-pill" data-office="sen">Sen.</button>
+            <button class="elected-pill" data-office="dep">Dep.</button>
+          </div>
+          <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 8px;">
+            <div class="sidebar-search-box" style="flex: 1; margin: 0;">
+              <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-dim);">search</span>
+              <input type="text" id="mElectedSearchInput" placeholder="Buscar eleito (nome, partido, UF)..." />
+            </div>
+            <select id="mElectedSortSelect" class="form-control" style="width: auto; height: 36px; padding: 0 6px; font-size: 11px; font-weight: 700; border-radius: 8px; background: var(--surface); color: var(--text-main); border: 1px solid var(--surface-border);" title="Ordenar eleitos">
+              <option value="votes_desc">Mais Votados</option>
+              <option value="pct_desc">Maior %</option>
+              <option value="uf_asc">Por UF</option>
+              <option value="name_asc">Nome A-Z</option>
+            </select>
+          </div>
+          <div id="mEleitosList" class="elected-feed" style="display:flex; flex-direction:column; gap:8px;"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- Drawer de Seleção e Configuração de Pleito Mobile        -->
+  <!-- ======================================================== -->
+  <div class="m-drawer-overlay" id="mPleitoDrawerOverlay" style="display:none;">
+    <div class="m-drawer-sheet" id="mPleitoDrawerSheet">
+      <div class="m-drawer-handle"></div>
+      <div class="m-drawer-header">
+        <div>
+          <span class="m-cand-detail-sub">Ciclo Eleitoral</span>
+          <h3 style="margin:0; font-size:16px;">Selecionar Pleito</h3>
+        </div>
+        <button id="mBtnClosePleitoDrawer" class="m-drawer-close" title="Fechar">
+          <span class="material-symbols-outlined" style="font-size:18px;">close</span>
+        </button>
+      </div>
+
+      <div style="overflow-y:auto; max-height:calc(85vh - 80px); padding:0 16px 24px;">
+        <div class="pleitos-options-list" id="mPleitosOptionsList" style="margin-bottom:14px;">
+          <!-- Preenchido dinamicamente via JS -->
+        </div>
+
+        <!-- Opção de inserção manual de código -->
+        <div class="pleito-custom-card" style="margin-bottom:16px;">
+          <button type="button" class="custom-toggle-btn" id="mBtnToggleCustomPleito">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="material-symbols-outlined" style="font-size: 18px; color: var(--m-blue);">tune</span>
+              <strong style="font-size: 13px;">Inserir Códigos Manualmente</strong>
+            </div>
+            <span class="material-symbols-outlined" id="mCustomToggleArrow" style="font-size: 18px; transition: transform 0.2s;">expand_more</span>
+          </button>
+
+          <div class="custom-pleito-content" id="mCustomPleitoContent" style="display: none;">
+            <p class="custom-pleito-help">
+              Consulte qualquer pleito ou turno oficial do TSE inserindo os códigos:
+            </p>
+            <div class="custom-inputs-grid" style="grid-template-columns: 1fr;">
+              <div class="custom-field">
+                <label for="mInpPleitoAno">Ano da Eleição</label>
+                <input type="text" id="mInpPleitoAno" placeholder="2026" value="2026" />
+              </div>
+              <div class="custom-field" style="margin-top:8px;">
+                <label for="mInpPleitoFed">Cód. Federal (Presidente)</label>
+                <input type="text" id="mInpPleitoFed" placeholder="6257" value="6257" />
+              </div>
+              <div class="custom-field" style="margin-top:8px;">
+                <label for="mInpPleitoEst">Cód. Estadual (Gov/Sen/Dep)</label>
+                <input type="text" id="mInpPleitoEst" placeholder="6259" value="6259" />
+              </div>
+              <div class="custom-field" style="margin-top:8px;">
+                <label for="mInpPleitoNome">Nome do Pleito (Opcional)</label>
+                <input type="text" id="mInpPleitoNome" placeholder="Ex: Pleito Personalizado" />
+              </div>
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="mBtnApplyCustomPleito" style="width: 100%; margin-top: 14px; justify-content: center; background:var(--m-green); color:#fff; border:none; padding:10px; border-radius:8px; font-weight:700; display:flex; align-items:center; gap:6px; cursor:pointer;">
+              <span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>
+              Aplicar e Monitorar Este Pleito
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

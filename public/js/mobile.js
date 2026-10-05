@@ -16,7 +16,120 @@ document.addEventListener("DOMContentLoaded", () => {
   // Persistência: URL > LocalStorage > Padrão
   let selectedCargo = urlParams.get("cargo") || localStorage.getItem(STORAGE_CARGO_KEY) || "1";
   let selectedUf = (urlParams.get("uf") || localStorage.getItem(STORAGE_UF_KEY) || (selectedCargo === "1" ? "" : "MS")).toUpperCase();
-  const isFakeMode = urlParams.get("mode") === "fake";
+  let isFakeMode = urlParams.get("mode") === "fake";
+
+  // Configuração e Lista de Pleitos Eleitorais
+  const PRESET_PLEITOS = [
+    {
+      id: "2026_1t",
+      name: "Eleição Geral 2026 · 1º Turno (Oficial)",
+      shortName: "Eleições 2026 · 1ºT (6257/6259)",
+      badge: "Oficial 1ºT",
+      badgeClass: "primary",
+      ano: "2026",
+      pleitoFed: "6257",
+      pleitoEst: "6259",
+      desc: "Presidente (6257), Gov., Sen. e Dep. (6259)",
+      isFake: false
+    },
+    {
+      id: "2026_2t",
+      name: "Eleição Geral 2026 · 2º Turno (Projeção/Oficial)",
+      shortName: "Eleições 2026 · 2ºT (6258/6260)",
+      badge: "2º Turno",
+      badgeClass: "secondary",
+      ano: "2026",
+      pleitoFed: "6258",
+      pleitoEst: "6260",
+      desc: "Disputa de 2º Turno Pres. (6258) e Gov. (6260)",
+      isFake: false
+    },
+    {
+      id: "2022_2t",
+      name: "Eleições 2022 · 2º Turno (Lula Eleito)",
+      shortName: "Eleições 2022 · 2ºT",
+      badge: "Histórico 2022",
+      badgeClass: "official",
+      ano: "2022",
+      pleitoFed: "545",
+      pleitoEst: "547",
+      desc: "Resultado definitivo do 2º Turno Presidencial (Lula vs Bolsonaro) e 27 Governadores",
+      isFake: false
+    },
+    {
+      id: "2022_1t",
+      name: "Eleições 2022 · 1º Turno (Histórico Oficial)",
+      shortName: "Eleições 2022 · 1ºT",
+      badge: "Histórico 2022",
+      badgeClass: "official",
+      ano: "2022",
+      pleitoFed: "544",
+      pleitoEst: "546",
+      desc: "1º Turno das Eleições 2022: Lula, Bolsonaro, Tebet, Gomes e Senadores/Deputados",
+      isFake: false
+    },
+    {
+      id: "2018_2t",
+      name: "Eleições 2018 · 2º Turno (Bolsonaro Eleito)",
+      shortName: "Eleições 2018 · 2ºT",
+      badge: "Histórico 2018",
+      badgeClass: "official",
+      ano: "2018",
+      pleitoFed: "296",
+      pleitoEst: "298",
+      desc: "Resultado oficial do 2º Turno das Eleições 2018 (Bolsonaro vs Haddad) e Governadores",
+      isFake: false
+    },
+    {
+      id: "sim_2026",
+      name: "Simulação de Apuração 2026 (Dados de Teste)",
+      shortName: "Simulação 2026 (Dados de Teste)",
+      badge: "Simulação",
+      badgeClass: "sim",
+      ano: "2026",
+      pleitoFed: "6257",
+      pleitoEst: "6259",
+      desc: "Totalização dinâmica com apuração progressiva",
+      isFake: true
+    }
+  ];
+
+  const STORAGE_PLEITO_KEY = "painel_eleitoral_pleito_config";
+  let activePleito = null;
+
+  try {
+    const saved = localStorage.getItem(STORAGE_PLEITO_KEY);
+    if (saved) activePleito = JSON.parse(saved);
+  } catch(e) {}
+
+  if (!activePleito) {
+    activePleito = PRESET_PLEITOS[0];
+  }
+
+  // URL overrides
+  if (urlParams.get("pleitoFed")) {
+    activePleito = {
+      id: "custom_url",
+      name: `Pleito Personalizado (${urlParams.get("pleitoFed")})`,
+      shortName: `Pleito ${urlParams.get("pleitoFed")}`,
+      ano: urlParams.get("ano") || "2026",
+      pleitoFed: urlParams.get("pleitoFed"),
+      pleitoEst: urlParams.get("pleitoEst") || "6259",
+      desc: "Configurado via parâmetros de URL",
+      isFake: isFakeMode
+    };
+  } else if (isFakeMode && !activePleito.isFake) {
+    activePleito = PRESET_PLEITOS.find(p => p.isFake) || PRESET_PLEITOS[0];
+  }
+
+  function getPleitoQueryParams() {
+    return {
+      ano: activePleito.ano || "2026",
+      pleitoFed: activePleito.pleitoFed || "6257",
+      pleitoEst: activePleito.pleitoEst || "6259",
+      ...((activePleito.isFake || isFakeMode) ? { mode: "fake" } : {})
+    };
+  }
 
   // Se for cargo estadual e não tiver estado selecionado, padroniza para MS
   if (selectedCargo !== "1" && (!selectedUf || selectedUf === "BR")) {
@@ -99,6 +212,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const mDrawerUfSearch = document.getElementById("mDrawerUfSearch");
   const mUfList = document.getElementById("mUfList");
 
+  // Pleito Drawer Elements
+  const mBtnOpenPleitoDrawer = document.getElementById("mBtnOpenPleitoDrawer");
+  const mBtnClosePleitoDrawer = document.getElementById("mBtnClosePleitoDrawer");
+  const mPleitoDrawerOverlay = document.getElementById("mPleitoDrawerOverlay");
+  const mPleitosOptionsList = document.getElementById("mPleitosOptionsList");
+  const mPleitoSubText = document.getElementById("mPleitoSubText");
+  const mBtnToggleCustomPleito = document.getElementById("mBtnToggleCustomPleito");
+  const mCustomToggleArrow = document.getElementById("mCustomToggleArrow");
+  const mCustomPleitoContent = document.getElementById("mCustomPleitoContent");
+  const mInpPleitoAno = document.getElementById("mInpPleitoAno");
+  const mInpPleitoFed = document.getElementById("mInpPleitoFed");
+  const mInpPleitoEst = document.getElementById("mInpPleitoEst");
+  const mInpPleitoNome = document.getElementById("mInpPleitoNome");
+  const mBtnApplyCustomPleito = document.getElementById("mBtnApplyCustomPleito");
+
   // Candidate Performance Modal Elements
   const mCandModalOverlay = document.getElementById("mCandModalOverlay");
   const mBtnCloseCandModal = document.getElementById("mBtnCloseCandModal");
@@ -145,6 +273,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const mBtnCloseRegionsDrawer = document.getElementById("mBtnCloseRegionsDrawer");
   const mTabBtnRegs = document.getElementById("mTabBtnRegs");
   const mTabBtnUfs = document.getElementById("mTabBtnUfs");
+  const mTabBtnEleitos = document.getElementById("mTabBtnEleitos");
+  const mEleitosWrap = document.getElementById("mEleitosWrap");
+  const mElectedOfficePills = document.getElementById("mElectedOfficePills");
+  const mElectedSearchInput = document.getElementById("mElectedSearchInput");
+  const mEleitosList = document.getElementById("mEleitosList");
+  const mElectedSortSelect = document.getElementById("mElectedSortSelect");
+  const mBtnQuickEleitos = document.getElementById("mBtnQuickEleitos");
+
+  let mElectedData = null;
+  let currentMobileElectedOffice = "all";
+  let currentMobileElectedFilter = "";
+  let currentMobileElectedSort = "votes_desc";
   const mRegionsList = document.getElementById("mRegionsList");
   const mStatesList = document.getElementById("mStatesList");
 
@@ -328,6 +468,111 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // ========================================================
+  // 5.2 Drawer de Seleção e Configuração de Pleito
+  // ========================================================
+  function renderMobilePleitosOptions() {
+    if (!mPleitosOptionsList) return;
+
+    mPleitosOptionsList.innerHTML = PRESET_PLEITOS.map(p => {
+      const isActive = (activePleito.id === p.id);
+      return `
+        <div class="pleito-card-option ${isActive ? 'active' : ''}" data-id="${p.id}">
+          <div class="pleito-opt-left">
+            <div class="pleito-radio-indicator"></div>
+            <div>
+              <div class="pleito-opt-title">${p.name}</div>
+              <div class="pleito-opt-desc">${p.desc}</div>
+            </div>
+          </div>
+          <span class="pleito-opt-badge ${p.badgeClass}">${p.badge}</span>
+        </div>
+      `;
+    }).join("");
+
+    mPleitosOptionsList.querySelectorAll(".pleito-card-option").forEach(card => {
+      card.addEventListener("click", () => {
+        const id = card.dataset.id;
+        const target = PRESET_PLEITOS.find(p => p.id === id);
+        if (!target) return;
+        selectMobilePleito(target);
+      });
+    });
+  }
+
+  function selectMobilePleito(pleitoObj) {
+    activePleito = pleitoObj;
+    localStorage.setItem(STORAGE_PLEITO_KEY, JSON.stringify(activePleito));
+    isFakeMode = pleitoObj.isFake === true;
+    closePleitoDrawer();
+
+    if (mPleitoSubText) {
+      mPleitoSubText.textContent = activePleito.shortName || activePleito.name;
+    }
+
+    fetchSnapshot();
+    startSSE();
+    fetchGeoSummaryMobile();
+    fetchMobileElectedData();
+  }
+
+  function openPleitoDrawer() {
+    if (!mPleitoDrawerOverlay) return;
+    renderMobilePleitosOptions();
+    if (mInpPleitoAno) mInpPleitoAno.value = activePleito.ano || "2026";
+    if (mInpPleitoFed) mInpPleitoFed.value = activePleito.pleitoFed || "6257";
+    if (mInpPleitoEst) mInpPleitoEst.value = activePleito.pleitoEst || "6259";
+    if (mInpPleitoNome) mInpPleitoNome.value = activePleito.id && activePleito.id.startsWith("custom") ? activePleito.name : "";
+    mPleitoDrawerOverlay.style.display = "flex";
+  }
+
+  function closePleitoDrawer() {
+    if (!mPleitoDrawerOverlay) return;
+    mPleitoDrawerOverlay.style.display = "none";
+  }
+
+  if (mBtnOpenPleitoDrawer) mBtnOpenPleitoDrawer.addEventListener("click", openPleitoDrawer);
+  if (mBtnClosePleitoDrawer) mBtnClosePleitoDrawer.addEventListener("click", closePleitoDrawer);
+  if (mPleitoDrawerOverlay) {
+    mPleitoDrawerOverlay.addEventListener("click", (e) => {
+      if (e.target === mPleitoDrawerOverlay) closePleitoDrawer();
+    });
+  }
+
+  if (mBtnToggleCustomPleito) {
+    mBtnToggleCustomPleito.addEventListener("click", () => {
+      const isHidden = mCustomPleitoContent.style.display === "none";
+      mCustomPleitoContent.style.display = isHidden ? "block" : "none";
+      if (mCustomToggleArrow) {
+        mCustomToggleArrow.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+      }
+    });
+  }
+
+  if (mBtnApplyCustomPleito) {
+    mBtnApplyCustomPleito.addEventListener("click", () => {
+      const ano = (mInpPleitoAno?.value || "2026").trim();
+      const fed = (mInpPleitoFed?.value || "6257").trim();
+      const est = (mInpPleitoEst?.value || "6259").trim();
+      const nome = (mInpPleitoNome?.value || "").trim() || `Pleito Personalizado (${fed}/${est})`;
+
+      const customObj = {
+        id: `custom_${fed}_${est}`,
+        name: nome,
+        shortName: `${nome} (${fed}/${est})`,
+        badge: "Personalizado",
+        badgeClass: "secondary",
+        ano: ano,
+        pleitoFed: fed,
+        pleitoEst: est,
+        desc: `Ano: ${ano} · Federal: ${fed} · Estadual: ${est}`,
+        isFake: false
+      };
+
+      selectMobilePleito(customObj);
+    });
+  }
+
+  // ========================================================
   // 6. Conexão em Tempo Real & Carregamento de Dados
   // ========================================================
   async function fetchSnapshot() {
@@ -335,12 +580,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const targetCargo = selectedCargo;
     const targetUf = selectedUf || (selectedCargo === "1" ? "br" : "ms");
+    const pleitoParams = getPleitoQueryParams();
 
     const query = new URLSearchParams({
       cargo: targetCargo,
-      uf: targetUf
+      uf: targetUf,
+      ...pleitoParams
     });
-    if (isFakeMode) query.set("mode", "fake");
 
     try {
       const res = await fetch(`/api/state?${query.toString()}`);
@@ -370,12 +616,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const currentReqCargo = selectedCargo;
     const currentReqUf = selectedUf || (selectedCargo === "1" ? "br" : "ms");
+    const pleitoParams = getPleitoQueryParams();
 
     const query = new URLSearchParams({
       cargo: currentReqCargo,
-      uf: currentReqUf
+      uf: currentReqUf,
+      ...pleitoParams
     });
-    if (isFakeMode) query.set("mode", "fake");
 
     sseEventSource = new EventSource(`/api/events?${query.toString()}`);
     sseEventSource.addEventListener("snapshot", (e) => {
@@ -414,7 +661,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (mOfficeBadge) mOfficeBadge.textContent = officeName;
     if (mSummaryLocation) mSummaryLocation.textContent = locationName;
-    if (mModeIndicator) mModeIndicator.textContent = (data.mode === "fake") ? "Modo Simulação" : "Oficial TSE";
+    if (mModeIndicator) mModeIndicator.textContent = (data.mode === "fake" || isFakeMode || activePleito.isFake) ? "Modo Simulação" : `Oficial TSE (${data.eleicaoId || activePleito.pleitoFed || '6257'})`;
+    if (mPleitoSubText) mPleitoSubText.textContent = activePleito.shortName || `${data.ano || activePleito.ano || '2026'} · Pleito ${data.eleicaoId || activePleito.pleitoFed}`;
 
     // Progresso de Urnas
     const pctStr = scopeData.pctSectionsDisplay || "0,00";
@@ -489,7 +737,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const topPct = parseFloat(String(list[0]?.pvap || "0").replace(",", ".")) || 1;
 
-    mCandidatesList.innerHTML = list.map((cand) => {
+    mCandidatesList.innerHTML = list.map((cand, idx) => {
       const pctStr = cand.pvap || "0,00";
       const pctNum = parseFloat(pctStr.replace(",", ".")) || 0;
       const barWidth = Math.min(100, Math.max(3, (pctNum / Math.max(0.1, topPct)) * 100));
@@ -503,7 +751,7 @@ document.addEventListener("DOMContentLoaded", () => {
         : `<div style="width:100%; height:100%; border-radius:50%; background:var(--bg-input); font-weight:800; font-size:14px; display:flex; align-items:center; justify-content:center;">${cand.n}</div>`;
 
       return `
-        <article class="m-cand-card" data-sqcand="${cand.sqcand || ""}" data-n="${cand.n || ""}">
+        <article class="m-cand-card" style="--stagger-i: ${idx}" data-sqcand="${cand.sqcand || ""}" data-n="${cand.n || ""}">
           <div class="m-cand-top-row">
             <div class="m-cand-person">
               <div class="m-avatar-container">
@@ -576,13 +824,14 @@ document.addEventListener("DOMContentLoaded", () => {
     currentModalFilter = "";
     currentModalSort = "pct";
 
+    const pleitoParams = getPleitoQueryParams();
     const query = new URLSearchParams({
       cargo: selectedCargo,
       uf: selectedUf || (selectedCargo === "1" ? "br" : "ms"),
       sqcand: sqcand || "",
-      n: n || ""
+      n: n || "",
+      ...pleitoParams
     });
-    if (isFakeMode) query.set("mode", "fake");
 
     fetch(`/api/candidate-performance?${query.toString()}`)
       .then(res => res.json())
@@ -920,22 +1169,265 @@ document.addEventListener("DOMContentLoaded", () => {
     mTabBtnRegs.addEventListener("click", () => {
       mTabBtnRegs.classList.add("active");
       mTabBtnUfs.classList.remove("active");
+      if (mTabBtnEleitos) mTabBtnEleitos.classList.remove("active");
       mRegionsList.style.display = "flex";
       mStatesList.style.display = "none";
+      if (mEleitosWrap) mEleitosWrap.style.display = "none";
     });
     mTabBtnUfs.addEventListener("click", () => {
       mTabBtnUfs.classList.add("active");
       mTabBtnRegs.classList.remove("active");
+      if (mTabBtnEleitos) mTabBtnEleitos.classList.remove("active");
       mRegionsList.style.display = "none";
       mStatesList.style.display = "flex";
+      if (mEleitosWrap) mEleitosWrap.style.display = "none";
     });
+    if (mTabBtnEleitos) {
+      mTabBtnEleitos.addEventListener("click", () => {
+        mTabBtnEleitos.classList.add("active");
+        mTabBtnRegs.classList.remove("active");
+        mTabBtnUfs.classList.remove("active");
+        mRegionsList.style.display = "none";
+        mStatesList.style.display = "none";
+        if (mEleitosWrap) {
+          mEleitosWrap.style.display = "flex";
+          renderMobileEleitosList();
+        }
+      });
+    }
+  }
+
+  if (mBtnQuickEleitos) {
+    mBtnQuickEleitos.addEventListener("click", () => {
+      openRegionsDrawer();
+      if (mTabBtnEleitos) {
+        mTabBtnEleitos.click();
+      }
+    });
+  }
+
+  if (mElectedOfficePills) {
+    mElectedOfficePills.querySelectorAll(".elected-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        mElectedOfficePills.querySelectorAll(".elected-pill").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        currentMobileElectedOffice = pill.dataset.office || "all";
+        renderMobileEleitosList();
+      });
+    });
+  }
+
+  if (mElectedSearchInput) {
+    mElectedSearchInput.addEventListener("input", (e) => {
+      currentMobileElectedFilter = e.target.value;
+      renderMobileEleitosList();
+    });
+  }
+
+  if (mElectedSortSelect) {
+    mElectedSortSelect.addEventListener("change", (e) => {
+      currentMobileElectedSort = e.target.value || "votes_desc";
+      renderMobileEleitosList();
+    });
+  }
+
+  function sortMobileElectedList(list, sortMode) {
+    const sorted = [...list];
+    switch(sortMode) {
+      case "votes_desc":
+        sorted.sort((a, b) => {
+          const vA = parseInt(String(a.votes || "0").replace(/\D/g, ""), 10) || 0;
+          const vB = parseInt(String(b.votes || "0").replace(/\D/g, ""), 10) || 0;
+          return vB - vA;
+        });
+        break;
+      case "pct_desc":
+        sorted.sort((a, b) => {
+          const pA = parseFloat(String(a.pct || "0").replace(",", ".")) || 0;
+          const pB = parseFloat(String(b.pct || "0").replace(",", ".")) || 0;
+          return pB - pA;
+        });
+        break;
+      case "uf_asc":
+        sorted.sort((a, b) => {
+          const uA = String(a.uf || a.scope || "").toUpperCase();
+          const uB = String(b.uf || b.scope || "").toUpperCase();
+          if (uA === "BR") return -1;
+          if (uB === "BR") return 1;
+          return uA.localeCompare(uB);
+        });
+        break;
+      case "name_asc":
+        sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        break;
+      default:
+        sorted.sort((a, b) => {
+          const vA = parseInt(String(a.votes || "0").replace(/\D/g, ""), 10) || 0;
+          const vB = parseInt(String(b.votes || "0").replace(/\D/g, ""), 10) || 0;
+          return vB - vA;
+        });
+        break;
+    }
+    return sorted;
+  }
+
+  function mNormStr(str) {
+    return (str || "")
+      .toString()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
+
+  async function fetchMobileElectedData() {
+    try {
+      const pleitoParams = getPleitoQueryParams();
+      const q = new URLSearchParams(pleitoParams).toString();
+
+      const res = await fetch(`/api/elected?${q}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data && data.ok) {
+        mElectedData = data;
+        renderMobileEleitosList();
+      }
+    } catch (err) {
+      console.warn("Falha no fetchMobileElectedData:", err);
+    }
+  }
+
+  function renderMobileEleitosList() {
+    if (!mEleitosList || !mElectedData) return;
+    let list = [];
+
+    if (currentMobileElectedOffice === "all" || currentMobileElectedOffice === "pres") {
+      if (mElectedData.president?.winner) {
+        const p = mElectedData.president.winner;
+        list.push({
+          office: "Presidente",
+          scope: "Brasil",
+          name: p.nmCompleto || p.nm,
+          party: p.sg,
+          n: p.n,
+          votes: p.vap,
+          pct: p.pvap,
+          status: mElectedData.president.status || "Eleito",
+          cor: p.cor || "var(--m-green)",
+          uf: "BR"
+        });
+      }
+    }
+
+    if (currentMobileElectedOffice === "all" || currentMobileElectedOffice === "gov") {
+      (mElectedData.governors || []).forEach(g => {
+        list.push({
+          office: "Governador",
+          scope: g.uf,
+          name: g.name,
+          party: g.party,
+          votes: g.votes,
+          pct: g.pct,
+          status: g.status || "Eleito",
+          cor: g.cor || "var(--m-blue)",
+          uf: g.uf
+        });
+      });
+    }
+
+    if (currentMobileElectedOffice === "all" || currentMobileElectedOffice === "sen") {
+      (mElectedData.senators || []).forEach(s => {
+        list.push({
+          office: "Senador",
+          scope: s.uf,
+          name: s.name,
+          party: s.party,
+          votes: s.votes,
+          pct: s.pct,
+          status: s.status || "Eleito",
+          cor: s.cor || "var(--m-blue)",
+          uf: s.uf
+        });
+      });
+    }
+
+    if (currentMobileElectedOffice === "all" || currentMobileElectedOffice === "dep") {
+      (mElectedData.deputiesFederal || []).forEach(d => {
+        list.push({
+          office: "Dep. Federal",
+          scope: d.uf,
+          name: d.name,
+          party: d.party,
+          n: d.n,
+          votes: d.votes,
+          pct: d.pct,
+          status: d.status || "Eleito por QP",
+          cor: d.cor || "#10b981",
+          uf: d.uf
+        });
+      });
+    }
+
+    if (currentMobileElectedFilter.trim()) {
+      const q = mNormStr(currentMobileElectedFilter);
+      list = list.filter(item => 
+        mNormStr(item.name).includes(q) ||
+        mNormStr(item.party).includes(q) ||
+        mNormStr(item.scope).includes(q) ||
+        mNormStr(item.uf).includes(q) ||
+        mNormStr(item.office).includes(q)
+      );
+    }
+
+    // Ordenação dinâmica
+    list = sortMobileElectedList(list, currentMobileElectedSort);
+
+    if (list.length === 0) {
+      mEleitosList.innerHTML = `
+        <div style="text-align:center; padding:30px 10px; color:var(--text-dim); font-size:12px;">
+          Nenhum eleito encontrado para o filtro selecionado.
+        </div>
+      `;
+      return;
+    }
+
+    mEleitosList.innerHTML = list.map((item, idx) => {
+      const votesFmt = item.votes ? Number(item.votes).toLocaleString("pt-BR") : "";
+      const rankClass = idx === 0 ? "rank-1" : (idx === 1 ? "rank-2" : (idx === 2 ? "rank-3" : ""));
+      return `
+        <div class="m-elected-card" style="--stagger-i: ${idx}">
+          <div class="m-elected-left">
+            <span class="elected-rank-badge ${rankClass}" style="margin-right:2px;">#${idx + 1}</span>
+            <span class="m-elected-avatar-badge" style="background:${item.cor}">${item.scope || item.uf || "BR"}</span>
+            <div class="m-elected-info">
+              <strong class="m-elected-name">${item.name}</strong>
+              <div class="m-elected-meta">
+                <span>${item.office}</span>
+                <span>·</span>
+                <strong>${item.party}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="m-elected-right">
+            <div class="m-elected-pct">${item.pct}%</div>
+            ${votesFmt ? `<div class="m-elected-votes">${votesFmt} votos</div>` : ""}
+            <span class="status-pill-elected" style="font-size:8px; padding:1px 4px;">
+              <span class="material-symbols-outlined" style="font-size:9px;">check</span>
+              ${item.status}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join("");
   }
 
   let mGeoFetchInProgress = false;
   function fetchGeoSummaryMobile() {
     if (mGeoFetchInProgress) return;
     mGeoFetchInProgress = true;
-    fetch(`/api/geo-summary${isFakeMode ? '?mode=fake' : ''}`)
+    const pleitoParams = getPleitoQueryParams();
+    const query = new URLSearchParams(pleitoParams).toString();
+    fetch(`/api/geo-summary?${query}`)
       .then(res => res.json())
       .then(data => {
         mGeoFetchInProgress = false;
@@ -952,9 +1444,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // ========================================================
   // 10. Inicialização
   // ========================================================
+  if (mPleitoSubText) {
+    mPleitoSubText.textContent = activePleito.shortName || activePleito.name;
+  }
   syncCargoUI();
   updateUfDisplay();
   fetchSnapshot();
   fetchGeoSummaryMobile();
+  fetchMobileElectedData();
   startSSE();
 });

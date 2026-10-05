@@ -18,6 +18,119 @@ document.addEventListener("DOMContentLoaded", () => {
   if (urlParams.get("uf")) selectedUf = urlParams.get("uf").toUpperCase();
   if (urlParams.get("cargo")) selectedCargo = urlParams.get("cargo");
 
+  // Configuração e Estado de Pleito
+  const PRESET_PLEITOS = [
+    {
+      id: "2026_1t",
+      name: "Eleição Geral 2026 · 1º Turno (Oficial Ordinária)",
+      shortName: "Eleições 2026 · 1ºT (6257/6259)",
+      badge: "Oficial TSE",
+      badgeClass: "official",
+      ano: "2026",
+      pleitoFed: "6257",
+      pleitoEst: "6259",
+      desc: "Presidente da República (6257), Governadores, Senadores e Deputados (6259)",
+      isFake: false
+    },
+    {
+      id: "2026_2t",
+      name: "Eleição Geral 2026 · 2º Turno (Projeção/Oficial)",
+      shortName: "Eleições 2026 · 2ºT (6258/6260)",
+      badge: "2º Turno",
+      badgeClass: "secondary",
+      ano: "2026",
+      pleitoFed: "6258",
+      pleitoEst: "6260",
+      desc: "Disputa de 2º Turno para Presidente (6258) e Governadores (6260)",
+      isFake: false
+    },
+    {
+      id: "2022_2t",
+      name: "Eleições 2022 · 2º Turno (Lula Eleito)",
+      shortName: "Eleições 2022 · 2ºT",
+      badge: "Histórico 2022",
+      badgeClass: "official",
+      ano: "2022",
+      pleitoFed: "545",
+      pleitoEst: "547",
+      desc: "Resultado definitivo do 2º Turno Presidencial (Lula vs Bolsonaro) e 27 Governadores",
+      isFake: false
+    },
+    {
+      id: "2022_1t",
+      name: "Eleições 2022 · 1º Turno (Histórico Oficial)",
+      shortName: "Eleições 2022 · 1ºT",
+      badge: "Histórico 2022",
+      badgeClass: "official",
+      ano: "2022",
+      pleitoFed: "544",
+      pleitoEst: "546",
+      desc: "1º Turno das Eleições 2022: Lula, Bolsonaro, Tebet, Gomes e Senadores/Deputados",
+      isFake: false
+    },
+    {
+      id: "2018_2t",
+      name: "Eleições 2018 · 2º Turno (Bolsonaro Eleito)",
+      shortName: "Eleições 2018 · 2ºT",
+      badge: "Histórico 2018",
+      badgeClass: "official",
+      ano: "2018",
+      pleitoFed: "296",
+      pleitoEst: "298",
+      desc: "Resultado oficial do 2º Turno das Eleições 2018 (Bolsonaro vs Haddad) e Governadores",
+      isFake: false
+    },
+    {
+      id: "sim_2026",
+      name: "Simulação de Apuração 2026 (Dados de Teste)",
+      shortName: "Simulação 2026 (Dados de Teste)",
+      badge: "Simulação",
+      badgeClass: "sim",
+      ano: "2026",
+      pleitoFed: "6257",
+      pleitoEst: "6259",
+      desc: "Totalização dinâmica com apuração progressiva e cenários de validação",
+      isFake: true
+    }
+  ];
+
+  const STORAGE_PLEITO_KEY = "painel_eleitoral_pleito_config";
+  let activePleito = null;
+
+  try {
+    const saved = localStorage.getItem(STORAGE_PLEITO_KEY);
+    if (saved) activePleito = JSON.parse(saved);
+  } catch(e) {}
+
+  if (!activePleito) {
+    activePleito = PRESET_PLEITOS[0];
+  }
+
+  // URL overrides
+  if (urlParams.get("pleitoFed")) {
+    activePleito = {
+      id: "custom_url",
+      name: `Pleito Personalizado (${urlParams.get("pleitoFed")})`,
+      shortName: `Pleito ${urlParams.get("pleitoFed")}`,
+      ano: urlParams.get("ano") || "2026",
+      pleitoFed: urlParams.get("pleitoFed"),
+      pleitoEst: urlParams.get("pleitoEst") || "6259",
+      desc: "Configurado via parâmetros de URL",
+      isFake: isFakeMode
+    };
+  } else if (isFakeMode && !activePleito.isFake) {
+    activePleito = PRESET_PLEITOS.find(p => p.isFake) || PRESET_PLEITOS[0];
+  }
+
+  function getPleitoQueryParams() {
+    return {
+      ano: activePleito.ano || "2026",
+      pleitoFed: activePleito.pleitoFed || "6257",
+      pleitoEst: activePleito.pleitoEst || "6259",
+      ...((activePleito.isFake || isFakeMode) ? { mode: "fake" } : {})
+    };
+  }
+
   // Elementos do DOM
   const svgMap = document.getElementById("brazilMap");
   const tooltip = document.getElementById("mapTooltip");
@@ -35,6 +148,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const preApurationBanner = document.getElementById("preApurationBanner");
   const preApurationDesc = document.getElementById("preApurationDesc");
   const statusIndicator = document.querySelector(".status-indicator");
+
+  // Elementos do Seletor e Modal de Pleito
+  const btnOpenPleitoModal = document.getElementById("btnOpenPleitoModal");
+  const btnClosePleitoModal = document.getElementById("btnClosePleitoModal");
+  const pleitoModal = document.getElementById("pleitoModal");
+  const currentPleitoBadge = document.getElementById("currentPleitoBadge");
+  const pleitosOptionsList = document.getElementById("pleitosOptionsList");
+  const btnToggleCustomPleito = document.getElementById("btnToggleCustomPleito");
+  const customToggleArrow = document.getElementById("customToggleArrow");
+  const customPleitoContent = document.getElementById("customPleitoContent");
+  const inpPleitoAno = document.getElementById("inpPleitoAno");
+  const inpPleitoFed = document.getElementById("inpPleitoFed");
+  const inpPleitoEst = document.getElementById("inpPleitoEst");
+  const inpPleitoNome = document.getElementById("inpPleitoNome");
+  const btnApplyCustomPleito = document.getElementById("btnApplyCustomPleito");
   
   // Resumo
   const apurationStatusText = document.getElementById("apurationStatusText");
@@ -83,6 +211,34 @@ document.addEventListener("DOMContentLoaded", () => {
   const statesFeed = document.getElementById("statesFeed");
   const sidebarStateSearch = document.getElementById("sidebarStateSearch");
 
+  // Elementos da Aba e Seção de Eleitos
+  const tabBtnElected = document.getElementById("tabBtnElected");
+  const tabContentElected = document.getElementById("tabContentElected");
+  const sidebarElectedOfficePills = document.getElementById("sidebarElectedOfficePills");
+  const sidebarElectedSearch = document.getElementById("sidebarElectedSearch");
+  const sidebarElectedFeed = document.getElementById("sidebarElectedFeed");
+
+  const electedShowcaseSection = document.getElementById("electedShowcaseSection");
+  const electedShowcaseSubtitle = document.getElementById("electedShowcaseSubtitle");
+  const showcaseOfficeTabs = document.getElementById("showcaseOfficeTabs");
+  const partyBenchesChips = document.getElementById("partyBenchesChips");
+  const benchesCategoryPills = document.getElementById("benchesCategoryPills");
+  const showcaseUfFilter = document.getElementById("showcaseUfFilter");
+  const showcaseSearchInput = document.getElementById("showcaseSearchInput");
+  const sidebarElectedSortSelect = document.getElementById("sidebarElectedSortSelect");
+  const showcaseSortSelect = document.getElementById("showcaseSortSelect");
+  const electedShowcaseGrid = document.getElementById("electedShowcaseGrid");
+
+  let electedData = null;
+  let currentSidebarElectedOffice = "all";
+  let currentSidebarElectedFilter = "";
+  let currentSidebarElectedSort = "votes_desc";
+  let currentShowcaseOffice = "all";
+  let currentShowcaseUf = "all";
+  let currentShowcaseSearch = "";
+  let currentShowcaseSort = "votes_desc";
+  let currentBenchesCategory = "gov";
+
   let geoSummary = null;
   let statesSearchQuery = "";
 
@@ -124,12 +280,15 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   function setupModeUI() {
+    if (currentPleitoBadge) {
+      currentPleitoBadge.textContent = activePleito.shortName || activePleito.name;
+    }
     if (isFakeMode) {
       modeBadge.textContent = "Modo Simulação 2026";
       modeBadge.className = "badge-pill sim";
       btnToggleMode.textContent = "Mudar para Oficial TSE";
     } else {
-      modeBadge.textContent = "Oficial TSE (Pleito 6257/6259)";
+      modeBadge.textContent = `Oficial TSE (${activePleito.pleitoFed || "6257"})`;
       modeBadge.className = "badge-pill";
       btnToggleMode.textContent = "Ver Simulação";
     }
@@ -138,13 +297,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   btnToggleMode.addEventListener("click", () => {
     isFakeMode = !isFakeMode;
-    const url = new URL(window.location);
     if (isFakeMode) {
-      url.searchParams.set("mode", "fake");
+      activePleito = PRESET_PLEITOS.find(p => p.isFake) || PRESET_PLEITOS[0];
     } else {
-      url.searchParams.delete("mode");
+      activePleito = PRESET_PLEITOS[0];
     }
-    window.location.href = url.toString();
+    localStorage.setItem(STORAGE_PLEITO_KEY, JSON.stringify(activePleito));
+    setupModeUI();
+    startRealtimeConnection();
+    fetchGeoSummary();
   });
 
   function updateMapColors() {
@@ -400,12 +561,16 @@ document.addEventListener("DOMContentLoaded", () => {
     resultsTitle.textContent = `Candidatos a ${office}`;
     resultsSubtitle.textContent = `${office} · ${locationName}`;
 
-    // Atualiza cabeçalho oficial
+    // Atualiza cabeçalho oficial e badge de pleito
+    if (currentPleitoBadge) {
+      currentPleitoBadge.textContent = activePleito.shortName || activePleito.name;
+    }
     if (electionHeading) {
+      const activeCode = (selectedCargo === "1") ? activePleito.pleitoFed : activePleito.pleitoEst;
       if (selectedCargo === "1") {
-        electionHeading.textContent = `Eleição Geral Federal 2026 - Presidente (Pleito 6257)`;
+        electionHeading.textContent = `${activePleito.name} - Presidente (Pleito ${activeCode})`;
       } else {
-        electionHeading.textContent = `Eleição Geral Estadual 2026 - ${office} · ${locationName} (Pleito 6259)`;
+        electionHeading.textContent = `${activePleito.name} - ${office} · ${locationName} (Pleito ${activeCode})`;
       }
     }
 
@@ -526,7 +691,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const viceRow = cand.vice ? `<div class="cand-vice">${cand.vice}</div>` : "";
 
       return `
-        <div class="candidate-card clickable" style="--cand-color: ${candColor}" data-sqcand="${cand.sqcand || ''}" data-n="${cand.n}" title="Clique para ver o desempenho detalhado por estados e cidades">
+        <div class="candidate-card clickable" style="--cand-color: ${candColor}; --stagger-i: ${idx}" data-sqcand="${cand.sqcand || ''}" data-n="${cand.n}" title="Clique para ver o desempenho detalhado por estados e cidades">
           <div class="cand-avatar-wrap">
             ${avatarHtml}
           </div>
@@ -606,9 +771,14 @@ document.addEventListener("DOMContentLoaded", () => {
     modalLoading.style.display = "flex";
     modalContent.style.display = "none";
     if (modalSearchInput) modalSearchInput.value = "";
-    currentFilterText = "";
-
-    const query = `cargo=${selectedCargo}&uf=${selectedUf || "br"}&sqcand=${sqcand || ""}&n=${n || ""}${isFakeMode ? "&mode=fake" : ""}`;
+    const pleitoParams = getPleitoQueryParams();
+    const query = new URLSearchParams({
+      cargo: selectedCargo,
+      uf: selectedUf || "br",
+      sqcand: sqcand || "",
+      n: n || "",
+      ...pleitoParams
+    }).toString();
     fetch(`/api/candidate-performance?${query}`)
       .then(res => res.json())
       .then(data => {
@@ -830,7 +1000,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderRegionsFeed() {
     if (!regionsFeed || !geoSummary?.regions) return;
 
-    regionsFeed.innerHTML = geoSummary.regions.map(r => {
+    regionsFeed.innerHTML = geoSummary.regions.map((r, idx) => {
       const c1 = r.leader;
       const c2 = r.runnerUp;
 
@@ -866,7 +1036,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }).join("");
 
       return `
-        <div class="region-card">
+        <div class="region-card" style="--stagger-i: ${idx}">
           <div class="region-head">
             <span class="region-name">Região ${r.region}</span>
             <span class="region-sec-pct">${r.pctSections}% apurado</span>
@@ -909,14 +1079,14 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    statesFeed.innerHTML = list.map(s => {
+    statesFeed.innerHTML = list.map((s, idx) => {
       const isSelected = (selectedUf === s.uf);
       const dotColor = s.leader?.cor || "#94a3b8";
       const leaderName = s.leader ? `${s.leader.nm} (${s.leader.sg})` : "Aguardando";
       const leaderPct = s.leader ? `${s.leader.pvap}%` : "0,00%";
 
       return `
-        <div class="state-item-row ${isSelected ? 'selected' : ''}" data-uf="${s.uf}">
+        <div class="state-item-row ${isSelected ? 'selected' : ''}" style="--stagger-i: ${idx}" data-uf="${s.uf}">
           <div class="state-item-left">
             <span class="state-item-badge" style="background:${dotColor}">${s.uf}</span>
             <div>
@@ -960,7 +1130,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderStatesFeed();
   }
 
-  // Abas da Sidebar
+  // Abas da Sidebar (Regiões, Estados e Eleitos)
   if (sidebarTabs) {
     sidebarTabs.querySelectorAll(".sidebar-tab").forEach(tab => {
       tab.addEventListener("click", () => {
@@ -970,10 +1140,19 @@ document.addEventListener("DOMContentLoaded", () => {
         if (target === "regions") {
           tabContentRegions.style.display = "flex";
           tabContentStates.style.display = "none";
-        } else {
+          if (tabContentElected) tabContentElected.style.display = "none";
+        } else if (target === "states") {
           tabContentRegions.style.display = "none";
           tabContentStates.style.display = "flex";
+          if (tabContentElected) tabContentElected.style.display = "none";
           renderStatesFeed();
+        } else if (target === "elected") {
+          tabContentRegions.style.display = "none";
+          tabContentStates.style.display = "none";
+          if (tabContentElected) {
+            tabContentElected.style.display = "flex";
+            renderSidebarElected();
+          }
         }
       });
     });
@@ -986,11 +1165,414 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  // Controles e Filtros de Eleitos (Sidebar e Showcase)
+  if (sidebarElectedOfficePills) {
+    sidebarElectedOfficePills.querySelectorAll(".elected-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        sidebarElectedOfficePills.querySelectorAll(".elected-pill").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        currentSidebarElectedOffice = pill.dataset.office || "all";
+        renderSidebarElected();
+      });
+    });
+  }
+
+  function normStr(str) {
+    return (str || "")
+      .toString()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+  }
+
+  if (sidebarElectedSearch) {
+    sidebarElectedSearch.addEventListener("input", (e) => {
+      currentSidebarElectedFilter = e.target.value;
+      renderSidebarElected();
+    });
+  }
+
+  if (showcaseOfficeTabs) {
+    showcaseOfficeTabs.querySelectorAll(".cargo-tab, button").forEach(btn => {
+      btn.addEventListener("click", () => {
+        showcaseOfficeTabs.querySelectorAll(".cargo-tab, button").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentShowcaseOffice = btn.dataset.office || "all";
+        renderShowcaseElected();
+      });
+    });
+  }
+
+  if (showcaseUfFilter) {
+    showcaseUfFilter.addEventListener("change", (e) => {
+      currentShowcaseUf = e.target.value || "all";
+      renderShowcaseElected();
+    });
+  }
+
+  if (showcaseSearchInput) {
+    showcaseSearchInput.addEventListener("input", (e) => {
+      currentShowcaseSearch = e.target.value || "";
+      renderShowcaseElected();
+    });
+  }
+
+  if (benchesCategoryPills) {
+    benchesCategoryPills.querySelectorAll(".elected-pill").forEach(pill => {
+      pill.addEventListener("click", () => {
+        benchesCategoryPills.querySelectorAll(".elected-pill").forEach(p => p.classList.remove("active"));
+        pill.classList.add("active");
+        currentBenchesCategory = pill.dataset.bench || "gov";
+        renderPartyBenches();
+      });
+    });
+  }
+
+  if (sidebarElectedSortSelect) {
+    sidebarElectedSortSelect.addEventListener("change", (e) => {
+      currentSidebarElectedSort = e.target.value || "votes_desc";
+      renderSidebarElected();
+    });
+  }
+
+  if (showcaseSortSelect) {
+    showcaseSortSelect.addEventListener("change", (e) => {
+      currentShowcaseSort = e.target.value || "votes_desc";
+      renderShowcaseElected();
+    });
+  }
+
+  function sortElectedList(list, sortMode) {
+    const sorted = [...list];
+    switch(sortMode) {
+      case "votes_desc":
+        sorted.sort((a, b) => {
+          const vA = parseInt(String(a.votes || "0").replace(/\D/g, ""), 10) || 0;
+          const vB = parseInt(String(b.votes || "0").replace(/\D/g, ""), 10) || 0;
+          return vB - vA;
+        });
+        break;
+      case "pct_desc":
+        sorted.sort((a, b) => {
+          const pA = parseFloat(String(a.pct || "0").replace(",", ".")) || 0;
+          const pB = parseFloat(String(b.pct || "0").replace(",", ".")) || 0;
+          return pB - pA;
+        });
+        break;
+      case "uf_asc":
+        sorted.sort((a, b) => {
+          const uA = String(a.uf || a.scope || "").toUpperCase();
+          const uB = String(b.uf || b.scope || "").toUpperCase();
+          if (uA === "BR") return -1;
+          if (uB === "BR") return 1;
+          return uA.localeCompare(uB);
+        });
+        break;
+      case "name_asc":
+        sorted.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+        break;
+      default:
+        sorted.sort((a, b) => {
+          const vA = parseInt(String(a.votes || "0").replace(/\D/g, ""), 10) || 0;
+          const vB = parseInt(String(b.votes || "0").replace(/\D/g, ""), 10) || 0;
+          return vB - vA;
+        });
+        break;
+    }
+    return sorted;
+  }
+
+  function updateShowcaseOfficeCounters() {
+    if (!showcaseOfficeTabs || !electedData) return;
+    const govCount = (electedData.governors || []).length;
+    const senCount = (electedData.senators || []).length;
+    const depCount = (electedData.deputiesFederal || []).length;
+
+    const btnGov = showcaseOfficeTabs.querySelector('[data-office="gov"]');
+    if (btnGov) {
+      btnGov.innerHTML = `<span class="material-symbols-outlined" style="font-size: 15px;">account_balance</span>Governadores (${govCount})`;
+    }
+
+    const btnSen = showcaseOfficeTabs.querySelector('[data-office="sen"]');
+    if (btnSen) {
+      btnSen.innerHTML = `<span class="material-symbols-outlined" style="font-size: 15px;">gavel</span>Senadores (${senCount})`;
+    }
+
+    const btnDep = showcaseOfficeTabs.querySelector('[data-office="dep"]');
+    if (btnDep) {
+      btnDep.innerHTML = `<span class="material-symbols-outlined" style="font-size: 15px;">badge</span>Deputados (${depCount})`;
+    }
+  }
+
+  function renderPartyBenches() {
+    if (!partyBenchesChips || !electedData) return;
+    let benches = [];
+    const cat = currentBenchesCategory;
+    if (cat === "gov") {
+      benches = electedData.partyBenches?.governors || [];
+    } else if (cat === "sen") {
+      benches = electedData.partyBenches?.senators || [];
+    } else if (cat === "dep") {
+      benches = electedData.partyBenches?.deputiesFederal || [];
+    }
+
+    if (benches.length === 0) {
+      benches = electedData.partyBenches?.governors || electedData.partyBenches?.senators || electedData.partyBenches?.deputiesFederal || [];
+    }
+
+    if (benches.length > 0) {
+      partyBenchesChips.innerHTML = benches.map(b => `
+        <span class="party-bench-chip" title="${b.party}: ${b.count} eleito(s)">
+          <span>${b.party}</span>
+          <span class="party-bench-num">${b.count}</span>
+        </span>
+      `).join("");
+    } else {
+      partyBenchesChips.innerHTML = `<span style="font-size:11px; color:var(--text-muted);">Totalização de bancadas em apuração</span>`;
+    }
+  }
+
+  async function fetchElectedData() {
+    try {
+      const pleitoParams = getPleitoQueryParams();
+      // Sempre busca o dataset nacional completo de eleitos para que a galeria contenha todos os cargos
+      const q = new URLSearchParams(pleitoParams).toString();
+
+      const res = await fetch(`/api/elected?${q}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (data && data.ok) {
+        electedData = data;
+        updateShowcaseOfficeCounters();
+        renderSidebarElected();
+        renderShowcaseElected();
+      }
+    } catch(err) {
+      console.warn("Falha ao buscar dados de eleitos:", err);
+    }
+  }
+
+  function getElectedListForOffice(officeType) {
+    if (!electedData) return [];
+    let list = [];
+
+    if (officeType === "all" || officeType === "pres") {
+      if (electedData.president?.winner) {
+        const p = electedData.president.winner;
+        list.push({
+          office: "Presidente",
+          scope: "Brasil",
+          name: p.nmCompleto || p.nm,
+          party: p.sg,
+          n: p.n,
+          votes: p.vap,
+          pct: p.pvap,
+          status: electedData.president.status || "Eleito",
+          cor: p.cor || "var(--pct-color)",
+          foto: p.foto,
+          uf: "BR"
+        });
+      }
+    }
+
+    if (officeType === "all" || officeType === "gov") {
+      (electedData.governors || []).forEach(g => {
+        list.push({
+          office: "Governador",
+          scope: g.uf,
+          name: g.name,
+          party: g.party,
+          votes: g.votes,
+          pct: g.pct,
+          status: g.status || "Eleito",
+          cor: g.cor || "var(--br-blue)",
+          foto: g.foto || null,
+          uf: g.uf
+        });
+      });
+    }
+
+    if (officeType === "all" || officeType === "sen") {
+      (electedData.senators || []).forEach(s => {
+        list.push({
+          office: "Senador",
+          scope: s.uf,
+          name: s.name,
+          party: s.party,
+          votes: s.votes,
+          pct: s.pct,
+          status: s.status || "Eleito",
+          cor: s.cor || "var(--br-blue)",
+          foto: s.foto || null,
+          uf: s.uf
+        });
+      });
+    }
+
+    if (officeType === "all" || officeType === "dep") {
+      (electedData.deputiesFederal || []).forEach(d => {
+        list.push({
+          office: "Dep. Federal",
+          scope: d.uf,
+          name: d.name,
+          party: d.party,
+          n: d.n,
+          votes: d.votes,
+          pct: d.pct,
+          status: d.status || "Eleito por QP",
+          cor: d.cor || "#10b981",
+          foto: d.foto || null,
+          uf: d.uf
+        });
+      });
+    }
+
+    return list;
+  }
+
+  function renderSidebarElected() {
+    if (!sidebarElectedFeed || !electedData) return;
+    let list = getElectedListForOffice(currentSidebarElectedOffice);
+
+    if (currentSidebarElectedFilter.trim()) {
+      const q = normStr(currentSidebarElectedFilter);
+      list = list.filter(item => 
+        normStr(item.name).includes(q) ||
+        normStr(item.party).includes(q) ||
+        normStr(item.scope).includes(q) ||
+        normStr(item.uf).includes(q) ||
+        normStr(item.office).includes(q)
+      );
+    }
+
+    // Ordenação da lista na barra lateral
+    list = sortElectedList(list, currentSidebarElectedSort);
+
+    if (list.length === 0) {
+      sidebarElectedFeed.innerHTML = `
+        <div style="text-align:center; padding:30px 10px; color:var(--text-muted); font-size:12px;">
+          Nenhum candidato eleito encontrado com o filtro atual.
+        </div>
+      `;
+      return;
+    }
+
+    sidebarElectedFeed.innerHTML = list.map((item, idx) => {
+      const votesFmt = item.votes ? Number(item.votes).toLocaleString("pt-BR") : "";
+      const rankClass = idx === 0 ? "rank-1" : (idx === 1 ? "rank-2" : (idx === 2 ? "rank-3" : ""));
+      return `
+        <div class="elected-card-item" style="--stagger-i: ${idx}">
+          <div class="elected-card-left">
+            <span class="elected-rank-badge ${rankClass}" style="margin-right: 2px;">#${idx + 1}</span>
+            <span class="elected-card-badge" style="background:${item.cor}">${item.scope || item.uf || "BR"}</span>
+            <div class="elected-card-info">
+              <strong class="elected-card-name">${item.name}</strong>
+              <div class="elected-card-meta">
+                <span>${item.office}</span>
+                <span>·</span>
+                <strong style="color:var(--text-main);">${item.party}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="elected-card-right">
+            <div class="elected-card-pct">${item.pct}%</div>
+            ${votesFmt ? `<div class="elected-card-votes">${votesFmt} votos</div>` : ""}
+            <span class="status-pill-elected">
+              <span class="material-symbols-outlined" style="font-size:10px;">check</span>
+              ${item.status}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderShowcaseElected() {
+    if (!electedShowcaseGrid || !electedData) return;
+
+    if (electedShowcaseSubtitle) {
+      electedShowcaseSubtitle.textContent = `${electedData.nomeEleicao || activePleito.name} · Resultado Oficial Consolidado`;
+    }
+
+    // Atualiza barras de bancadas
+    renderPartyBenches();
+
+    let list = getElectedListForOffice(currentShowcaseOffice);
+
+    // Filtro por Estado (UF) no Quadro
+    if (currentShowcaseUf && currentShowcaseUf !== "all" && currentShowcaseUf !== "BR") {
+      const ufTarget = currentShowcaseUf.toUpperCase();
+      list = list.filter(item => (item.uf || item.scope || "").toUpperCase() === ufTarget || item.office === "Presidente");
+    }
+
+    // Busca textual no Quadro
+    if (currentShowcaseSearch.trim()) {
+      const q = normStr(currentShowcaseSearch);
+      list = list.filter(item => 
+        normStr(item.name).includes(q) ||
+        normStr(item.party).includes(q) ||
+        normStr(item.scope).includes(q) ||
+        normStr(item.uf).includes(q) ||
+        normStr(item.office).includes(q)
+      );
+    }
+
+    // Ordenação dinâmica (Mais Votados, Maior %, UF, Nome)
+    list = sortElectedList(list, currentShowcaseSort);
+
+    if (list.length === 0) {
+      electedShowcaseGrid.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align:center; padding: 40px; color:var(--text-muted); font-size:13px;">
+          Nenhum eleito encontrado para o filtro e categoria selecionados.
+        </div>
+      `;
+      return;
+    }
+
+    electedShowcaseGrid.innerHTML = list.map((item, idx) => {
+      const votesFmt = item.votes ? Number(item.votes).toLocaleString("pt-BR") : "";
+      const rankClass = idx === 0 ? "rank-1" : (idx === 1 ? "rank-2" : (idx === 2 ? "rank-3" : ""));
+      const avatarHtml = item.foto 
+        ? `<img src="${item.foto}" alt="${item.name}" class="elected-grid-avatar" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+           <div class="elected-grid-avatar-fallback" style="display:none; border-color:${item.cor};">${item.n || item.party}</div>`
+        : `<div class="elected-grid-avatar-fallback" style="border-color:${item.cor};">${item.n || item.party}</div>`;
+
+      return `
+        <article class="elected-grid-card" style="--stagger-i: ${idx}">
+          <div class="elected-grid-card-head">
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="elected-rank-badge ${rankClass}">#${idx + 1}</span>
+              <span class="elected-grid-scope">${item.office} · ${item.scope || item.uf}</span>
+            </div>
+            <span class="status-pill-elected">
+              <span class="material-symbols-outlined" style="font-size:10px;">verified</span>
+              ${item.status}
+            </span>
+          </div>
+          <div class="elected-grid-card-body">
+            ${avatarHtml}
+            <div class="elected-grid-card-meta">
+              <strong>${item.name}</strong>
+              <span>${item.party}${item.n ? ` (${item.n})` : ""}</span>
+            </div>
+          </div>
+          <div class="elected-grid-card-foot">
+            <span style="font-weight:700; color:var(--text-muted);">${votesFmt ? `${votesFmt} votos` : "Homologado"}</span>
+            <strong style="color:var(--pct-color); font-size:13px;">${item.pct}%</strong>
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
   let geoFetchInProgress = false;
   function fetchGeoSummary() {
     if (geoFetchInProgress) return;
     geoFetchInProgress = true;
-    const url = `/api/geo-summary${isFakeMode ? '?mode=fake' : ''}`;
+    const pleitoParams = getPleitoQueryParams();
+    const query = new URLSearchParams(pleitoParams).toString();
+    const url = `/api/geo-summary?${query}`;
     fetch(url)
       .then(res => res.json())
       .then(data => {
@@ -1008,6 +1590,109 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
+  // ========================================================
+  // 2.3 Modal e Seleção de Pleito Eleitoral
+  // ========================================================
+  function renderPleitosOptions() {
+    if (!pleitosOptionsList) return;
+
+    pleitosOptionsList.innerHTML = PRESET_PLEITOS.map(p => {
+      const isActive = (activePleito.id === p.id);
+      return `
+        <div class="pleito-card-option ${isActive ? 'active' : ''}" data-id="${p.id}">
+          <div class="pleito-opt-left">
+            <div class="pleito-radio-indicator"></div>
+            <div>
+              <div class="pleito-opt-title">${p.name}</div>
+              <div class="pleito-opt-desc">${p.desc}</div>
+            </div>
+          </div>
+          <span class="pleito-opt-badge ${p.badgeClass}">${p.badge}</span>
+        </div>
+      `;
+    }).join("");
+
+    pleitosOptionsList.querySelectorAll(".pleito-card-option").forEach(card => {
+      card.addEventListener("click", () => {
+        const id = card.dataset.id;
+        const target = PRESET_PLEITOS.find(p => p.id === id);
+        if (!target) return;
+        selectPleito(target);
+      });
+    });
+  }
+
+  function selectPleito(pleitoObj) {
+    activePleito = pleitoObj;
+    localStorage.setItem(STORAGE_PLEITO_KEY, JSON.stringify(activePleito));
+    isFakeMode = pleitoObj.isFake === true;
+    setupModeUI();
+
+    if (pleitoModal) pleitoModal.style.display = "none";
+    if (currentPleitoBadge) currentPleitoBadge.textContent = activePleito.shortName || activePleito.name;
+
+    // Reinicia conexões em tempo real com o novo pleito
+    startRealtimeConnection();
+    fetchGeoSummary();
+    fetchElectedData();
+  }
+
+  function openPleitoModal() {
+    if (!pleitoModal) return;
+    renderPleitosOptions();
+    if (inpPleitoAno) inpPleitoAno.value = activePleito.ano || "2026";
+    if (inpPleitoFed) inpPleitoFed.value = activePleito.pleitoFed || "6257";
+    if (inpPleitoEst) inpPleitoEst.value = activePleito.pleitoEst || "6259";
+    if (inpPleitoNome) inpPleitoNome.value = activePleito.id && activePleito.id.startsWith("custom") ? activePleito.name : "";
+    pleitoModal.style.display = "flex";
+  }
+
+  function closePleitoModal() {
+    if (pleitoModal) pleitoModal.style.display = "none";
+  }
+
+  if (btnOpenPleitoModal) btnOpenPleitoModal.addEventListener("click", openPleitoModal);
+  if (btnClosePleitoModal) btnClosePleitoModal.addEventListener("click", closePleitoModal);
+  if (pleitoModal) {
+    pleitoModal.addEventListener("click", (e) => {
+      if (e.target === pleitoModal) closePleitoModal();
+    });
+  }
+
+  if (btnToggleCustomPleito) {
+    btnToggleCustomPleito.addEventListener("click", () => {
+      const isHidden = customPleitoContent.style.display === "none";
+      customPleitoContent.style.display = isHidden ? "block" : "none";
+      if (customToggleArrow) {
+        customToggleArrow.style.transform = isHidden ? "rotate(180deg)" : "rotate(0deg)";
+      }
+    });
+  }
+
+  if (btnApplyCustomPleito) {
+    btnApplyCustomPleito.addEventListener("click", () => {
+      const ano = (inpPleitoAno.value || "2026").trim();
+      const fed = (inpPleitoFed.value || "6257").trim();
+      const est = (inpPleitoEst.value || "6259").trim();
+      const nome = (inpPleitoNome.value || "").trim() || `Pleito Personalizado (${fed}/${est})`;
+
+      const customObj = {
+        id: `custom_${fed}_${est}`,
+        name: nome,
+        shortName: `${nome} (${fed}/${est})`,
+        badge: "Personalizado",
+        badgeClass: "secondary",
+        ano: ano,
+        pleitoFed: fed,
+        pleitoEst: est,
+        desc: `Ano: ${ano} · Federal: ${fed} · Estadual: ${est}`,
+        isFake: false
+      };
+
+      selectPleito(customObj);
+    });
+  }
+
   // 3. Conexões com API e Streaming SSE
   function startRealtimeConnection() {
     if (eventSource) {
@@ -1019,7 +1704,13 @@ document.addEventListener("DOMContentLoaded", () => {
       pollingTimer = null;
     }
 
-    const query = `cargo=${selectedCargo}&uf=${selectedUf || "br"}${isFakeMode ? "&mode=fake" : ""}`;
+    const pleitoParams = getPleitoQueryParams();
+    const qObj = {
+      cargo: selectedCargo,
+      uf: selectedUf || "br",
+      ...pleitoParams
+    };
+    const query = new URLSearchParams(qObj).toString();
     const url = `/api/state?${query}`;
     const sseUrl = `/api/events?${query}`;
 
@@ -1076,4 +1767,5 @@ document.addEventListener("DOMContentLoaded", () => {
   initSvgMap();
   startRealtimeConnection();
   fetchGeoSummary();
+  fetchElectedData();
 });

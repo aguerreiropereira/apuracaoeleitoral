@@ -81,7 +81,14 @@
   <nav class="election-nav">
     <div class="nav-content">
       <div class="election-title-box">
-        <span class="election-label">ELEIÇÃO</span>
+        <div class="election-title-row">
+          <span class="election-label">ELEIÇÃO ATIVA</span>
+          <button class="btn btn-sm btn-pleito-selector" id="btnOpenPleitoModal" title="Clique para trocar o pleito a monitorar">
+            <span class="material-symbols-outlined" style="font-size: 15px; color: var(--br-yellow-gold);">how_to_vote</span>
+            <span id="currentPleitoBadge">Pleito: Eleições 2026 (6257/6259)</span>
+            <span class="material-symbols-outlined" style="font-size: 14px; opacity: 0.8;">tune</span>
+          </button>
+        </div>
         <h2 id="electionHeading">Eleição Geral Federal 2026 - 1º Turno (Pleito 6257)</h2>
       </div>
 
@@ -267,6 +274,10 @@
             <span class="material-symbols-outlined" style="font-size: 16px;">map</span>
             Estados (27)
           </button>
+          <button class="sidebar-tab" data-tab="elected" id="tabBtnElected">
+            <span class="material-symbols-outlined" style="font-size: 16px; color: var(--br-yellow-gold);">how_to_reg</span>
+            Eleitos
+          </button>
         </div>
 
         <!-- Aba 1: Regiões -->
@@ -292,6 +303,37 @@
             </div>
           </div>
         </div>
+
+        <!-- Aba 3: Eleitos (Presidente, Governadores, Senadores, Deputados) -->
+        <div class="sidebar-tab-content" id="tabContentElected" style="display: none;">
+          <div class="elected-filter-bar">
+            <div class="elected-pills" id="sidebarElectedOfficePills">
+              <button class="elected-pill active" data-office="all">Todos</button>
+              <button class="elected-pill" data-office="pres">Pres.</button>
+              <button class="elected-pill" data-office="gov">Gov.</button>
+              <button class="elected-pill" data-office="sen">Sen.</button>
+              <button class="elected-pill" data-office="dep">Dep.</button>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center; margin-top: 8px;">
+              <div class="sidebar-search-box" style="flex: 1; margin: 0;">
+                <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-dim);">search</span>
+                <input type="text" id="sidebarElectedSearch" placeholder="Buscar eleito (nome, partido, UF)..." />
+              </div>
+              <select id="sidebarElectedSortSelect" class="form-control" style="width: auto; height: 34px; padding: 0 6px; font-size: 11px; font-weight: 700; border-radius: 8px; background: var(--surface); color: var(--text-main); border: 1px solid var(--surface-border); cursor: pointer;" title="Ordenar eleitos">
+                <option value="votes_desc">Mais Votados</option>
+                <option value="pct_desc">Maior %</option>
+                <option value="uf_asc">Por UF</option>
+                <option value="name_asc">Nome A-Z</option>
+              </select>
+            </div>
+          </div>
+          <div class="elected-feed" id="sidebarElectedFeed">
+            <div class="loading-state">
+              <div class="spinner"></div>
+              <span>Carregando eleitos...</span>
+            </div>
+          </div>
+        </div>
       </aside>
 
       <!-- Coluna da Direita: Lista Oficial dos Candidatos -->
@@ -313,6 +355,115 @@
       </section>
 
     </main>
+
+    <!-- Nova Seção: Galeria e Quadro Geral de Eleitos -->
+    <section class="panel-card elected-showcase-section" id="electedShowcaseSection">
+      <div class="panel-header" style="flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-outlined" style="font-size: 24px; color: var(--pct-color);">verified</span>
+            <h3 class="panel-title" style="margin: 0; font-size: 18px;">Quadro Geral de Eleitos</h3>
+          </div>
+          <p class="panel-desc" id="electedShowcaseSubtitle">Presidente, Governadores (27 UFs), Senadores e Deputados eleitos e bancadas partidárias</p>
+        </div>
+
+        <div class="elected-header-actions" style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+          <!-- Abas de Cargos com Estilo Antigravity -->
+          <div class="cargo-tabs" id="showcaseOfficeTabs" style="margin: 0;">
+            <button class="cargo-tab active" data-office="all">
+              <span class="material-symbols-outlined" style="font-size: 15px;">group</span>
+              Todos os Eleitos
+            </button>
+            <button class="cargo-tab" data-office="pres">
+              <span class="material-symbols-outlined" style="font-size: 15px;">flag</span>
+              Presidente
+            </button>
+            <button class="cargo-tab" data-office="gov">
+              <span class="material-symbols-outlined" style="font-size: 15px;">account_balance</span>
+              Governadores (27)
+            </button>
+            <button class="cargo-tab" data-office="sen">
+              <span class="material-symbols-outlined" style="font-size: 15px;">gavel</span>
+              Senadores
+            </button>
+            <button class="cargo-tab" data-office="dep">
+              <span class="material-symbols-outlined" style="font-size: 15px;">badge</span>
+              Deputados
+            </button>
+          </div>
+
+          <!-- Filtro por Estado (UF) no Quadro -->
+          <select id="showcaseUfFilter" class="form-control" style="width: auto; height: 36px; padding: 0 10px; font-size: 12px; font-weight: 700; border-radius: 8px; background: var(--surface); color: var(--text-main); border: 1px solid var(--surface-border);">
+            <option value="all">Todas as UFs (Brasil)</option>
+            <option value="AC">AC - Acre</option>
+            <option value="AL">AL - Alagoas</option>
+            <option value="AP">AP - Amapá</option>
+            <option value="AM">AM - Amazonas</option>
+            <option value="BA">BA - Bahia</option>
+            <option value="CE">CE - Ceará</option>
+            <option value="DF">DF - Distrito Federal</option>
+            <option value="ES">ES - Espírito Santo</option>
+            <option value="GO">GO - Goiás</option>
+            <option value="MA">MA - Maranhão</option>
+            <option value="MT">MT - Mato Grosso</option>
+            <option value="MS">MS - Mato Grosso do Sul</option>
+            <option value="MG">MG - Minas Gerais</option>
+            <option value="PA">PA - Pará</option>
+            <option value="PB">PB - Paraíba</option>
+            <option value="PR">PR - Paraná</option>
+            <option value="PE">PE - Pernambuco</option>
+            <option value="PI">PI - Piauí</option>
+            <option value="RJ">RJ - Rio de Janeiro</option>
+            <option value="RN">RN - Rio Grande do Norte</option>
+            <option value="RS">RS - Rio Grande do Sul</option>
+            <option value="RO">RO - Rondônia</option>
+            <option value="RR">RR - Roraima</option>
+            <option value="SC">SC - Santa Catarina</option>
+            <option value="SP">SP - São Paulo</option>
+            <option value="SE">SE - Sergipe</option>
+            <option value="TO">TO - Tocantins</option>
+          </select>
+
+          <!-- Ordenação no Quadro Geral -->
+          <div style="display: flex; align-items: center; gap: 4px; background: var(--surface); border: 1px solid var(--surface-border); border-radius: 8px; padding: 0 8px; height: 36px;">
+            <span class="material-symbols-outlined" style="font-size: 16px; color: var(--pct-color);">swap_vert</span>
+            <select id="showcaseSortSelect" class="form-control" style="width: auto; height: 100%; padding: 0 4px; font-size: 12px; font-weight: 700; border: none; background: transparent; color: var(--text-main); cursor: pointer; outline: none;" title="Ordenar eleitos">
+              <option value="votes_desc">Ordenar: Mais Votados</option>
+              <option value="pct_desc">Ordenar: Maior %</option>
+              <option value="uf_asc">Ordenar: Estado (A-Z)</option>
+              <option value="name_asc">Ordenar: Nome (A-Z)</option>
+            </select>
+          </div>
+
+          <!-- Busca rápida no Quadro -->
+          <div class="sidebar-search-box" style="width: 200px; height: 36px; margin: 0;">
+            <span class="material-symbols-outlined" style="font-size: 16px; color: var(--text-dim);">search</span>
+            <input type="text" id="showcaseSearchInput" placeholder="Buscar no quadro..." style="height: 100%; font-size: 12px;" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Bancadas Partidárias -->
+      <div class="party-benches-bar" id="partyBenchesBar" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight: 800; text-transform: uppercase;">Bancadas Partidárias:</span>
+          <div class="elected-pills" id="benchesCategoryPills">
+            <button class="elected-pill active" data-bench="gov">Governadores</button>
+            <button class="elected-pill" data-bench="sen">Senadores</button>
+            <button class="elected-pill" data-bench="dep">Deputados</button>
+          </div>
+        </div>
+        <div id="partyBenchesChips" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+      </div>
+
+      <!-- Grade dos Cards de Eleitos -->
+      <div class="elected-grid" id="electedShowcaseGrid">
+        <div class="loading-state">
+          <div class="spinner"></div>
+          <span>Carregando quadro de eleitos...</span>
+        </div>
+      </div>
+    </section>
 
     <!-- Rodapé -->
     <footer class="tse-footer">
@@ -419,6 +570,70 @@
               <!-- Linhas dinâmicas inseridas via JS -->
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Seleção e Configuração de Pleito -->
+  <div id="pleitoModal" class="modal-overlay" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="pleitoModalTitle">
+    <div class="modal-dialog" style="max-width: 640px;">
+      <div class="modal-ribbon"></div>
+      <button id="btnClosePleitoModal" class="btn-close-modal" aria-label="Fechar">&times;</button>
+      
+      <div class="pleito-modal-body">
+        <div class="pleito-modal-head">
+          <div class="pleito-icon-box">
+            <span class="material-symbols-outlined" style="font-size: 24px; color: var(--pct-color);">how_to_vote</span>
+          </div>
+          <div>
+            <h3 id="pleitoModalTitle" class="pleito-modal-title">Selecionar Pleito para Monitoramento</h3>
+            <p class="pleito-modal-desc">Escolha uma eleição predefinida ou configure códigos específicos do TSE</p>
+          </div>
+        </div>
+
+        <!-- Lista de Pleitos Predefinidos -->
+        <div class="pleitos-options-list" id="pleitosOptionsList">
+          <!-- Preenchido dinamicamente via JS -->
+        </div>
+
+        <!-- Bloco de Pleito Personalizado / Manual -->
+        <div class="pleito-custom-card">
+          <button type="button" class="custom-toggle-btn" id="btnToggleCustomPleito">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="material-symbols-outlined" style="font-size: 18px; color: var(--br-blue);">tune</span>
+              <strong style="font-size: 13px;">Inserir Códigos Manualmente (Outro Pleito TSE)</strong>
+            </div>
+            <span class="material-symbols-outlined" id="customToggleArrow" style="font-size: 18px; transition: transform 0.2s;">expand_more</span>
+          </button>
+
+          <div class="custom-pleito-content" id="customPleitoContent" style="display: none;">
+            <p class="custom-pleito-help">
+              Digite o ano e os códigos de eleição conforme a tabela oficial do TSE para consultar qualquer pleito.
+            </p>
+            <div class="custom-inputs-grid">
+              <div class="custom-field">
+                <label for="inpPleitoAno">Ano da Eleição</label>
+                <input type="text" id="inpPleitoAno" placeholder="2026" value="2026" />
+              </div>
+              <div class="custom-field">
+                <label for="inpPleitoFed">Cód. Federal (Presidente)</label>
+                <input type="text" id="inpPleitoFed" placeholder="6257" value="6257" />
+              </div>
+              <div class="custom-field">
+                <label for="inpPleitoEst">Cód. Estadual (Gov/Sen/Dep)</label>
+                <input type="text" id="inpPleitoEst" placeholder="6259" value="6259" />
+              </div>
+            </div>
+            <div class="custom-field" style="margin-top: 10px;">
+              <label for="inpPleitoNome">Nome / Identificação do Pleito</label>
+              <input type="text" id="inpPleitoNome" placeholder="Ex: Pleito Suplementar / Personalizado" />
+            </div>
+            <button type="button" class="btn btn-primary btn-sm" id="btnApplyCustomPleito" style="width: 100%; margin-top: 14px; justify-content: center;">
+              <span class="material-symbols-outlined" style="font-size: 18px;">check_circle</span>
+              Aplicar e Monitorar Este Pleito
+            </button>
+          </div>
         </div>
       </div>
     </div>

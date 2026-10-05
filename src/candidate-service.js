@@ -46,16 +46,16 @@ class CandidateService {
 
     // 2. Determina o tipo de visão (Nacional ou Estadual)
     if (cargo === "1") {
-      return await this.buildPresidentialPerformance(candidate, snapshot, isFake);
+      return await this.buildPresidentialPerformance(candidate, snapshot, isFake, params);
     } else {
-      return await this.buildStateCandidatePerformance(candidate, snapshot, uf, cargo, isFake);
+      return await this.buildStateCandidatePerformance(candidate, snapshot, uf, cargo, isFake, params);
     }
   }
 
   /**
    * Desempenho de Presidente: Nível de Estados (27 UFs) e Capitais
    */
-  async buildPresidentialPerformance(candidate, snapshot, isFake) {
+  async buildPresidentialPerformance(candidate, snapshot, isFake, params = {}) {
     const hasStarted = snapshot.hasStarted === true;
     const candTotalVotes = parseInt(String(candidate.vap || "0").replace(/\D/g, ""), 10);
     const candPct = parseFloat(String(candidate.pvap || "0").replace(",", ".")) || 0;
@@ -116,15 +116,18 @@ class CandidateService {
       const tseClient = this.aggregator.tseClient;
 
       // 1. Coleta os snapshots estaduais dos 27 estados
+      const ano = params.ano || "2026";
+      const pleitoFed = params.pleitoFed || params.pleito || "6257";
+
       const statePromises = UFS.map(ufCode =>
-        tseClient.fetchLiveSnapshot("1", ufCode.toLowerCase()).catch(() => null)
+        tseClient.fetchLiveSnapshot("1", ufCode.toLowerCase(), { ano, pleitoFed }).catch(() => null)
       );
 
       // 2. Coleta os snapshots das 27 capitais via arquivos JWS municipais oficiais
       const capitalPromises = UFS.map(async (ufCode) => {
         const code = CAPITAL_CODES[ufCode];
         if (!code) return null;
-        const url = `https://resultados.tse.jus.br/oficial/ele2026/6257/dados/${ufCode.toLowerCase()}/${ufCode.toLowerCase()}${code}-c0001-e006257-u.jws`;
+        const url = `https://resultados.tse.jus.br/oficial/ele${ano}/${pleitoFed}/dados/${ufCode.toLowerCase()}/${ufCode.toLowerCase()}${code}-c0001-e00${pleitoFed}-u.jws`;
         try {
           return await tseClient.fetchJws(url);
         } catch (e) {
@@ -262,7 +265,7 @@ class CandidateService {
   /**
    * Desempenho de Governador / Senador: Nível de Cidades / Municípios
    */
-  async buildStateCandidatePerformance(candidate, snapshot, ufUpper, cargo, isFake) {
+  async buildStateCandidatePerformance(candidate, snapshot, ufUpper, cargo, isFake, params = {}) {
     const hasStarted = snapshot.hasStarted === true;
     let officeName = "Candidato";
     switch(String(cargo)) {
@@ -312,7 +315,8 @@ class CandidateService {
     } else {
       // Modo Oficial: Consulta a Capital Oficial do Estado via TSE CDN
       const tseClient = this.aggregator.tseClient;
-      const eleicaoId = (cargo === "1") ? "6257" : "6259";
+      const ano = params.ano || "2026";
+      const eleicaoId = (cargo === "1") ? (params.pleitoFed || params.pleito || "6257") : (params.pleitoEst || "6259");
       const ufLower = ufUpper.toLowerCase();
       const capCode = CAPITAL_CODES[ufUpper];
       let capPayload = null;
@@ -321,7 +325,7 @@ class CandidateService {
         let actualCargo = String(cargo);
         if (ufUpper === "DF" && actualCargo === "7") actualCargo = "8";
         const cargoPadded = actualCargo.padStart(4, "0");
-        const capUrl = `https://resultados.tse.jus.br/oficial/ele2026/${eleicaoId}/dados/${ufLower}/${ufLower}${capCode}-c${cargoPadded}-e00${eleicaoId}-u.jws`;
+        const capUrl = `https://resultados.tse.jus.br/oficial/ele${ano}/${eleicaoId}/dados/${ufLower}/${ufLower}${capCode}-c${cargoPadded}-e00${eleicaoId}-u.jws`;
         try {
           capPayload = await tseClient.fetchJws(capUrl);
         } catch (e) {
